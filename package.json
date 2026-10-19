@@ -13,7 +13,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "seed:admin": "node scripts/seed-admin.mjs",
     "backup": "node scripts/backup.mjs",
-    "reset:admin-password": "node scripts/seed-admin.mjs --reset"
+    "reset:admin-password": "node scripts/seed-admin.mjs --reset",
+    "upload:photos": "node scripts/upload-photos.mjs"
   },
   "dependencies": {
     "@convex-dev/better-auth": "0.12.5",
@@ -40,6 +41,7 @@
     "convex-test": "^0.0.62",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "image-size": "^2.0.4",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "~4.1.11"

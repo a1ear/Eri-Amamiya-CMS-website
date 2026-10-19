@@ -43,3 +43,7 @@ next-env.d.ts
 
 # local Convex backups (contain personal data)
 backups/
+
+# local photo drop folder for scripts/upload-photos.mjs (never committed)
+photos-to-upload/
+demo-pics/
