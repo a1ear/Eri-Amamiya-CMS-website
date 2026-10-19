@@ -10,9 +10,9 @@ export async function Videos() {
   if (videos.length === 0) return null;
 
   return (
-    <section id="videos" aria-labelledby="videos-heading" className="scroll-mt-16 border-t border-[var(--foreground)]">
+    <section id="videos" aria-labelledby="videos-heading" className="scroll-mt-16 border-t border-[var(--line)]">
       <div className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
-        <h2 id="videos-heading" className="text-xs font-medium uppercase tracking-[0.25em] text-[var(--muted)]">
+        <h2 id="videos-heading" className="section-label text-xs font-medium uppercase tracking-[0.25em] text-[var(--muted)]">
           Featured videos
         </h2>
         <ul className="mt-8 grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">

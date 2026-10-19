@@ -1,17 +1,33 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-/* Black-and-white theme. Greys are only used for secondary text and
-   placeholders, and --muted keeps AA contrast on every background.
+/* Dark mode follows the device (prefers-color-scheme), so Tailwind's default
+   media-based `dark:` variant is kept. Do not add a class-based variant. */
+
+/* ---------------------------------------------------------------------------
+   Palette. Black-and-white theme: greys only for secondary text and
+   placeholders; --muted keeps AA contrast on every background.
    --background is the solid tone for filled UI (header, inverted text);
-   --backdrop paints the page itself. */
+   --backdrop paints the page itself.
+   ------------------------------------------------------------------------ */
 :root {
   /* Native controls (dropdowns, date/time pickers, scrollbars) follow the theme. */
   color-scheme: light dark;
   --background: #ffffff;
   --foreground: #0a0a0a;
-  --muted: #555555;
+  --muted: #555555; /* secondary TEXT (not shadcn's muted background) */
   --surface: #f0f0f0;
   --backdrop: #ffffff;
+  --glow: rgb(0 0 0 / 0.045);
+  --card: #ffffff;
+  --line: rgb(10 10 10 / 0.14);
+  --line-strong: rgb(10 10 10 / 0.38);
+
+  /* Motion tokens (animate skill): strong curves, never built-in ease. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* Dark: charcoal-to-black instead of pure black, and a softened white, so
@@ -24,19 +40,55 @@
     --muted: #a8a8ad;
     --surface: #313136;
     --backdrop: linear-gradient(180deg, #2a2a2e 0%, #1c1c1f 45%, #121214 100%);
+    --glow: rgb(255 255 255 / 0.06);
+    --card: #232327;
+    --line: rgb(236 236 236 / 0.14);
+    --line-strong: rgb(236 236 236 / 0.38);
   }
 }
 
+/* shadcn/ui semantic tokens, mapped onto the palette above (monochrome;
+   square corners to match the editorial design). */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--foreground);
+  --color-primary-foreground: var(--background);
+  --color-secondary: var(--surface);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--surface);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--surface);
+  --color-accent-foreground: var(--foreground);
+  /* No hue anywhere: destructive actions are marked by wording + a confirm. */
+  --color-destructive: var(--foreground);
+  --color-border: var(--line);
+  --color-input: var(--line-strong);
+  --color-ring: var(--foreground);
+
+  --radius: 0rem;
+  --radius-sm: 0rem;
+  --radius-md: 0rem;
+  --radius-lg: 0rem;
+  --radius-xl: 0rem;
+
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-heading: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+  }
 }
 
 /* Fixed to the viewport (a separate layer, so scrolling stays smooth on
@@ -46,7 +98,7 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: -2;
   background: var(--backdrop);
   pointer-events: none;
 }
@@ -55,8 +107,128 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Editorial section numbering: "01 / About me". A counter, so sections that
+   are hidden for lack of content never leave a gap in the numbers. */
+main {
+  counter-reset: section;
+}
+.section-label::before {
+  counter-increment: section;
+  content: counter(section, decimal-leading-zero) " / ";
+  color: var(--foreground);
+}
+
+/* ---------------------------------------------------------------------------
+   Ambient background (public page only, see AmbientBackground.tsx).
+   Two soft glows drifting slowly. Transform-only CSS animation: runs off the
+   main thread, no JS, no layout/paint per frame. Static under reduced motion.
+   ------------------------------------------------------------------------ */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ambient span {
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, var(--glow), transparent 70%);
+  will-change: transform;
+}
+.ambient span:nth-child(1) {
+  top: -30vmax;
+  left: -20vmax;
+  animation: ambient-a 38s var(--ease-in-out) infinite alternate;
+}
+.ambient span:nth-child(2) {
+  bottom: -35vmax;
+  right: -25vmax;
+  animation: ambient-b 46s var(--ease-in-out) infinite alternate;
+}
+@keyframes ambient-a {
+  to {
+    transform: translate3d(18vmax, 14vmax, 0) scale(1.15);
+  }
+}
+@keyframes ambient-b {
+  to {
+    transform: translate3d(-16vmax, -12vmax, 0) scale(0.9);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Hero entrance: plays once on page load (rare tier: delight allowed).
+   CSS so it starts immediately while scripts are still loading; staggered
+   60ms. Reduced motion: opacity only, no movement.
+   ------------------------------------------------------------------------ */
+.enter {
+  animation: enter-up 700ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 60ms + 80ms);
+}
+.enter-reveal {
+  animation: enter-reveal 900ms var(--ease-in-out) both;
+  animation-delay: 120ms;
+}
+@keyframes enter-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+@keyframes enter-reveal {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Button press feedback (animate skill recipe). */
+.press {
+  transition: transform 160ms var(--ease-out);
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+/* Admin list items: quick entrance when added (@starting-style, no JS). */
+.item-enter {
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
+  @starting-style {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  .ambient span {
+    animation: none;
+  }
+  .enter {
+    animation-name: enter-fade;
+    animation-duration: 300ms;
+  }
+  .enter-reveal {
+    animation: enter-fade 300ms ease both;
+  }
+  .press:active {
+    transform: none;
+  }
+  .item-enter {
+    transform: none;
+  }
+}
+@keyframes enter-fade {
+  from {
+    opacity: 0;
   }
 }

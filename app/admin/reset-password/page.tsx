@@ -6,12 +6,12 @@ import { Suspense, useState, type FormEvent } from "react";
 import { authClient } from "@/lib/auth-client";
 
 const input =
-  "w-full border border-black bg-transparent px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 dark:border-white";
+  "w-full border border-[var(--line-strong)] bg-transparent px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2";
 
 export default function ResetPasswordPage() {
   return (
     <main className="flex min-h-full flex-1 items-center justify-center px-4 py-16">
-      <div className="w-full max-w-sm space-y-5 border border-black p-6 dark:border-white">
+      <div className="w-full max-w-sm space-y-5 border border-[var(--line-strong)] p-6">
         <h1 className="text-xl font-semibold tracking-tight">Choose a new password</h1>
         <Suspense fallback={<p className="text-sm">Loading…</p>}>
           <ResetForm />
@@ -77,7 +77,7 @@ function ResetForm() {
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-1.5">
         <label htmlFor="password" className="block text-sm font-medium">
-          New password <span className="font-normal text-neutral-600 dark:text-neutral-400">(12+ characters)</span>
+          New password <span className="font-normal text-muted-foreground">(12+ characters)</span>
         </label>
         <input id="password" name="password" type="password" autoComplete="new-password" minLength={12} required className={input} />
       </div>
@@ -92,7 +92,7 @@ function ResetForm() {
           {state.message}
         </p>
       )}
-      <button type="submit" disabled={state.kind === "saving"} className="w-full bg-black px-4 py-2.5 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 dark:bg-white dark:text-black">
+      <button type="submit" disabled={state.kind === "saving"} className="press w-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50">
         {state.kind === "saving" ? "Saving…" : "Set new password"}
       </button>
     </form>

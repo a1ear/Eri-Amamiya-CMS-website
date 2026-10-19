@@ -11,9 +11,9 @@ export async function Schedule() {
   const live = primaryLiveLink(socials);
 
   return (
-    <section id="schedule" aria-labelledby="schedule-heading" className="scroll-mt-16 border-t border-[var(--foreground)]">
+    <section id="schedule" aria-labelledby="schedule-heading" className="scroll-mt-16 border-t border-[var(--line)]">
       <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-16 md:grid-cols-[12rem_minmax(0,1fr)] md:py-24">
-        <h2 id="schedule-heading" className="text-xs font-medium uppercase tracking-[0.25em] text-[var(--muted)]">
+        <h2 id="schedule-heading" className="section-label text-xs font-medium uppercase tracking-[0.25em] text-[var(--muted)]">
           Stream schedule
         </h2>
         <ScheduleView

@@ -144,18 +144,44 @@ widths: 360, 375, 1024, 1440. There is no horizontal scroll at any of them.
   avatar preview (circle) and the 64px app icon.
 - **1px solid rules** separate and frame: sections, cards, inputs, the next-stream card.
 - **No shadows**, except a lifted row while it is being dragged.
+- shadcn/ui's `--radius` is set to 0, so every shadcn component is square too.
 
 ### 3.5 Motion
 
-| Motion | Spec | Reduced-motion |
-|---|---|---|
-| Anchor scrolling | `scroll-behavior: smooth` | `auto` |
-| Image hover | `scale-[1.02]`–`[1.03]`, 500ms ease-out | `motion-reduce:transition-none` |
-| Live indicator | `animate-pulse` dot | `motion-reduce:animate-none` |
-| Drag reorder | dnd-kit transform/transition | n/a (buttons do the same) |
+Built to the `animate` skill's rules: animate only with a named purpose,
+`transform`/`opacity` only, strong curves (never built-in `ease`/`ease-in`),
+UI under 300ms, the cheapest tool that works, reduced motion shipped with every
+animation. Curve tokens in `globals.css`: `--ease-out` `cubic-bezier(0.23,1,0.32,1)`,
+`--ease-in-out` `cubic-bezier(0.77,0,0.175,1)`, `--ease-drawer`.
 
-Motion is feedback only. Nothing animates on load, and nothing loops except
-the live dot.
+**One job per library:**
+
+| Motion | Where | Tool | Spec | Reduced motion |
+|---|---|---|---|---|
+| Ambient glow (2 soft radial glows drifting) | Public only | CSS keyframes (`.ambient`) | transform only, 38s / 46s `--ease-in-out` alternate, off the main thread | static |
+| Hero entrance (words rise from masks, then tagline/bio/CTA; portrait clip-path wipe) | Public | CSS (`.enter`, `.enter-reveal`) | 700ms `--ease-out`, 60ms stagger; portrait 900ms `--ease-in-out` | fade only, 300ms |
+| Scroll reveals (section blocks; gallery/video tiles batched) | Public | **GSAP + ScrollTrigger**, lazy chunk loaded after hydration | from `y: 28` + opacity, 0.8s (tiles 0.7s, 60ms stagger), `ui-out` = `--ease-out` via CustomEase, fires once | fade only, 0.35s |
+| Lightbox open/close | Public | **Motion** (chunk loads on first gallery interaction) | dialog fade + stage `scale(0.96)` to 1, 250ms ease-out; close plays it in reverse | fade only |
+| Lightbox photo change | Public | Motion `AnimatePresence` | slide 12% toward the direction of travel, 300ms ease-out | fade only |
+| Lightbox drag (swipe left/right, flick down to close) | Public | Motion drag | spring `{duration 0.5, bounce 0.2}` snap-back; swipe at 80px, or a flick of at least 24px faster than 500px/s | same (gesture) |
+| Image hover zoom + "View" wash | Public | CSS | `scale(1.03)` 700ms `--ease-out`; hover-capable pointers only | none |
+| Live dot | Public | CSS `animate-ping` | the only looping motion besides the ambient glow | static dot |
+| Button press | Both | CSS (`.press`) | `scale(0.97)` 160ms `--ease-out` on `:active` | none |
+| Confirm dialog | Admin | shadcn AlertDialog (tw-animate) | fade + `zoom-in-95`, 200ms `--ease-out` | (Radix) |
+| Inbox: a filed message leaves the list | Admin | Motion `AnimatePresence` + layout | exit `translateX(-16px)` + fade, 200ms; the rest close the gap | fade only, no layout motion |
+| Tab indicator | Admin | shadcn Tabs (line variant) | underline on the active tab | n/a |
+| Anchor scrolling | Public | CSS | `scroll-behavior: smooth` | `auto` |
+
+Rules that keep it honest:
+- **Nothing a visitor needs waits for JavaScript.** The hero animates in CSS
+  the moment it streams in; GSAP loads after the page is interactive and only
+  touches sections still **below** the viewport, so nothing visible ever blinks
+  out. Verified: every revealed element ends at full opacity with no leftover
+  transform.
+- **No ambient motion in the admin.** It is a tool used many times a day; it
+  gets only fast feedback (press, dialog, list exit).
+- Sortable admin rows have **no** entrance animation: dnd-kit drives their
+  transform inline, and a CSS transition would make dragging lag.
 
 ### 3.6 Iconography
 
@@ -194,10 +220,13 @@ carry meaning are paired with `sr-only` text or an `aria-label`.
 - Tile = button → image, then tag (meta label) and caption.
 - **Alt text** derived: `caption` → `"{tag} cosplay"` → `"Cosplay photo"`, plus
   `" by {name}"`.
-- Lightbox: native `<dialog>` (focus trap, Esc, inert page). Counter `n / N`
-  (`aria-live`), ← → buttons and arrow keys, swipe ≥50px on touch, click the
-  backdrop to close, page scroll locked, **focus returns to the tile of the
-  last photo viewed**.
+- Hover/focus: the image eases to 1.03 and a "View" wash fades in (hover-capable pointers only).
+- Lightbox (`Lightbox.tsx`, Motion, loaded on first interaction with the grid):
+  native `<dialog>` (focus trap, Esc, inert page), solid black stage. Counter
+  `n / N` (`aria-live`), ← → buttons and arrow keys, **drag/swipe left or right**
+  to change photo and **flick down** to close (spring snap-back), page scroll
+  locked, **focus returns to the tile of the last photo viewed**. No
+  click-to-close on the photo itself (a drag's mouse-up would trigger it).
 
 ### Featured videos
 - Cards in a 1 → 2 (`sm`) → 3 (`lg`) grid; 16:9 frame with a 1px border.
@@ -246,14 +275,21 @@ Name as a headline, social links, `© {year} {name}`.
 `h1` → one-line purpose sentence (muted) → **add/create form first** → list
 of existing items → empty state ("No photos yet" + what to do).
 
-### Controls (`components/admin/styles.ts`)
+### Controls (`components/admin/styles.ts`, built on shadcn/ui)
 
 | Control | Look | Use |
 |---|---|---|
-| `primaryButton` | filled foreground | one per form: Save / Add |
-| `secondaryButton` | 1px outline, inverts on hover | Undo, Hide/Show, Delete, Open ↗ |
-| `iconButton` | 36px square outline | drag handle, ↑ ↓ |
-| `inputClass` | 1px outline, 2px when `aria-invalid` | every text input/select |
+| `primaryButton` | shadcn `Button` default (filled foreground), 40px, `.press` | one per form: Save / Add |
+| `secondaryButton` | shadcn `Button` outline, 36px, `.press` | Undo, Hide/Show, Delete, Open ↗ |
+| `iconButton` | shadcn `Button` outline icon (36px) | drag handle, ↑ ↓ |
+| `inputClass` | shadcn input look (`border-input`, focus ring); padding-based height so textareas and selects share it; 2px when `aria-invalid` | every text input/select |
+
+shadcn components live in `components/ui/` (button, input, textarea, label,
+badge, tabs, alert-dialog, separator, native-select). Their tokens map onto
+the palette in `globals.css` (`--color-primary` = foreground,
+`--color-muted-foreground` = `--muted`, `--color-border` = `--line`, …), and
+dark mode stays device-driven (no `.dark` class). All admin colours come from
+these tokens.
 
 ### Field pattern (Profile and others)
 Label (top) → counter `12/60` (right, `tabular-nums`, bold when over) →
@@ -269,9 +305,11 @@ field errors at once, and all are shown together.
   errors): "Saving…" → "Saved. Your site is updated." No toasts, no modals.
 - **One-click actions** (Hide/Show, Mark read, Archive) save immediately and
   report in the same status line.
-- **Destructive actions** use the native `confirm()` with the item named:
-  "Delete "Frieren at AniCon"? This removes it from your site and can't be
-  undone."
+- **Destructive actions** use a shadcn AlertDialog via `useConfirm()`
+  (`components/admin/ConfirmProvider.tsx`): a title naming the item ("Delete
+  "Frieren at AniCon"?"), one consequence sentence, and buttons **Keep it** /
+  **Delete photo** (the verb names the thing). Focus starts on *Keep it*, so
+  Enter never deletes.
 
 ### Ordering (`SortableList`)
 Each row has a drag handle (mouse, touch, keyboard via dnd-kit) **and** ↑ ↓
@@ -286,7 +324,8 @@ above the list: "The top item shows first on your site."
   or WebP image." and is deleted.
 
 ### Inbox
-Tabs New / Read / Archived (`role="tablist"`). Cards: name `<email>`, time,
+shadcn Tabs (line variant) New / Read / Archived, with a count badge on New;
+arrow keys move between tabs. Filing a message slides it out of the list. Cards: name `<email>`, time,
 topic, message (`whitespace-pre-wrap`), and a note when the notification
 email isn't set up yet or failed (the message itself is always safe). Actions: Reply by email (mailto), Mark read/unread,
 Archive / Move back. **No edit, no delete:** messages are a record.
@@ -392,28 +431,35 @@ Measured on the production build:
 
 | Metric | Budget | Measured |
 |---|---|---|
-| First-party JS (compressed) | ≤ 200 KB | 178 KB |
+| First-party JS in the critical path (compressed) | ≤ 200 KB | ~178 KB |
+| GSAP chunk | after load, never blocking | 47 KB, starts ~3s in (after `load`) |
+| Motion (lightbox) | only when a photo is opened | 2 small chunks on first interaction |
 | HTML | ≤ 30 KB | 16 KB |
 | CLS | 0 | 0 |
 | Third-party requests before interaction | Turnstile only (lazy) | Turnstile only |
 
-Rules that keep it there: no embedded players; anything heavy loads on
-intent (`import()` on submit / when configured); images through `next/image`
-with explicit `sizes`; no web fonts beyond Geist (one family, latin subset).
+Rules that keep it there: no embedded players; anything heavy loads on intent
+(`import()` on gallery interaction, after hydration, on submit, or only when
+configured); images through `next/image` with explicit `sizes`; ambient and
+hero motion in CSS (zero JS); no web fonts beyond Geist.
 
 ---
 
 ## 13. Known gaps (decisions to revisit)
 
-1. **Admin colours are literal** (`border-black`, `bg-black`, `neutral-*`)
-   rather than the CSS tokens the public site uses. They look identical today;
-   move them to tokens if the palette ever changes.
-2. **One Suspense boundary covers hero → schedule**, so the slowest query
+1. **One Suspense boundary covers hero → schedule**, so the slowest query
    delays all of them. Fine at current data sizes; split if any section gets heavy.
-3. **No theme toggle**: the site follows the device. Add one only if Eri asks.
-4. **Admin UI has not had a signed-in visual walk-through.** It was covered by
-   API and route tests, not by eye. Do one before handover.
-5. **Gallery shows at most 200 photos, videos at most 24.** Add pagination if
+2. **No theme toggle**: the site follows the device. Add one only if Eri asks.
+3. **Admin walk-through is partial.** Overview, Profile, Socials (add + confirm
+   dialog + delete) and Inbox tabs were checked signed in on the dev backend;
+   Photos, Videos and Schedule pages were covered by tests, not by eye.
+4. **Reduced motion is implemented but not visually emulated** (CSS media
+   queries, `gsap.matchMedia`, Motion's `useReducedMotion`). Check once with
+   the OS setting on.
+5. **The lightbox shows a black stage while a full-size photo loads.** Fine on
+   fast connections; a blurred placeholder from the grid thumbnail would help
+   on slow ones.
+6. **Gallery shows at most 200 photos, videos at most 24.** Add pagination if
    she gets near either.
 
 ---

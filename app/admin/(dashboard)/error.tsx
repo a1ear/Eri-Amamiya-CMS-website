@@ -25,14 +25,14 @@ export default function DashboardError({
       </p>
       <div className="mt-6 flex gap-3">
         {signedOut ? (
-          <Link href="/admin/login" className="bg-black px-4 py-2 text-sm text-white dark:bg-white dark:text-black">
+          <Link href="/admin/login" className="bg-primary px-4 py-2 text-sm text-primary-foreground">
             Sign in
           </Link>
         ) : (
           <button
             type="button"
             onClick={reset}
-            className="bg-black px-4 py-2 text-sm text-white dark:bg-white dark:text-black"
+            className="bg-primary px-4 py-2 text-sm text-primary-foreground"
           >
             Try again
           </button>

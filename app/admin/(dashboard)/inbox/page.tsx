@@ -1,9 +1,11 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
+import { AnimatePresence, domMax, LazyMotion, m, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { messageOf } from "@/components/admin/errors";
 import { secondaryButton } from "@/components/admin/styles";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { CONTACT_RULES } from "@/convex/lib/contactRules";
@@ -23,48 +25,70 @@ export default function InboxPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-10">
       <h1 className="text-2xl font-semibold tracking-tight">Inbox</h1>
-      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+      <p className="mt-1 text-sm text-muted-foreground">
         Messages from your website&apos;s contact form. Messages can&apos;t be edited, only filed.
       </p>
 
-      <div role="tablist" aria-label="Messages" className="mt-6 flex gap-2 border-b border-black dark:border-white">
-        {VIEWS.map(([value, label]) => (
-          <button
-            key={value}
-            role="tab"
-            type="button"
-            aria-selected={view === value}
-            onClick={() => setView(value)}
-            className={`-mb-px border border-b-0 px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 ${
-              view === value
-                ? "border-black bg-[var(--background)] font-semibold dark:border-white"
-                : "border-transparent text-neutral-600 hover:text-current dark:text-neutral-400"
-            }`}
-          >
-            {label}
-            {value === "new" && unread ? ` (${unread})` : ""}
-          </button>
+      <Tabs value={view} onValueChange={(v) => setView(v as View)} className="mt-6">
+        <TabsList variant="line" aria-label="Messages" className="w-full justify-start border-b border-[var(--line)] pb-1">
+          {VIEWS.map(([value, label]) => (
+            <TabsTrigger key={value} value={value} className="flex-none px-3">
+              {label}
+              {value === "new" && unread ? (
+                <span className="ml-1.5 inline-flex min-w-5 justify-center bg-primary px-1 text-xs font-semibold text-primary-foreground">
+                  {unread}
+                </span>
+              ) : null}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {VIEWS.map(([value]) => (
+          <TabsContent key={value} value={value} className="mt-4">
+            {messages === undefined ? (
+              <p role="status" className="text-sm">
+                Loading messages…
+              </p>
+            ) : messages.length === 0 ? (
+              <p className="py-10 text-center text-sm text-muted-foreground">
+                {view === "new" ? "No new messages. You're all caught up." : `No ${view} messages.`}
+              </p>
+            ) : (
+              <MessageList messages={messages} />
+            )}
+          </TabsContent>
         ))}
-      </div>
-
-      <div role="tabpanel" className="mt-4">
-        {messages === undefined ? (
-          <p role="status" className="text-sm">
-            Loading messages…
-          </p>
-        ) : messages.length === 0 ? (
-          <p className="py-10 text-center text-sm text-neutral-600 dark:text-neutral-400">
-            {view === "new" ? "No new messages. You're all caught up." : `No ${view} messages.`}
-          </p>
-        ) : (
-          <ul className="space-y-3">
-            {messages.map((m) => (
-              <MessageCard key={m._id} message={m} />
-            ))}
-          </ul>
-        )}
-      </div>
+      </Tabs>
     </main>
+  );
+}
+
+/**
+ * Filing a message (read / archive) moves it to another tab, so it leaves this
+ * list: it slides out and the rest close the gap, instead of teleporting.
+ * Occasional action → standard 180–200ms; fade only under reduced motion.
+ */
+function MessageList({ messages }: { messages: Doc<"contactMessages">[] }) {
+  const reduce = useReducedMotion();
+  const ease = [0.23, 1, 0.32, 1] as const;
+  return (
+    <LazyMotion features={domMax} strict>
+      <ul className="space-y-3">
+        <AnimatePresence initial={false} mode="popLayout">
+          {messages.map((msg) => (
+            <m.li
+              key={msg._id}
+              layout={!reduce}
+              initial={{ opacity: 0, transform: reduce ? "none" : "translateY(6px)" }}
+              animate={{ opacity: 1, transform: "translateY(0px)" }}
+              exit={{ opacity: 0, transform: reduce ? "none" : "translateX(-16px)" }}
+              transition={{ duration: 0.2, ease }}
+            >
+              <MessageCard message={msg} />
+            </m.li>
+          ))}
+        </AnimatePresence>
+      </ul>
+    </LazyMotion>
   );
 }
 
@@ -95,17 +119,17 @@ function MessageCard({ message }: { message: Doc<"contactMessages"> }) {
   }
 
   return (
-    <li className={`border border-black p-4 dark:border-white ${message.status === "new" ? "border-l-4" : ""}`}>
+    <div className={`border border-[var(--line-strong)] bg-card p-4 ${message.status === "new" ? "border-l-4 border-l-foreground" : ""}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="font-semibold">
-          {message.name} <span className="font-normal text-neutral-600 dark:text-neutral-400">&lt;{message.email}&gt;</span>
+          {message.name} <span className="font-normal text-muted-foreground">&lt;{message.email}&gt;</span>
         </p>
-        <p className="text-xs text-neutral-600 tabular-nums dark:text-neutral-400">{received}</p>
+        <p className="text-xs text-muted-foreground tabular-nums">{received}</p>
       </div>
       <p className="mt-1 text-xs font-medium uppercase tracking-wider">{CONTACT_RULES.topics[message.topic]}</p>
       <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed">{message.message}</p>
       {EMAIL_NOTE[message.emailStatus] && (
-        <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400">{EMAIL_NOTE[message.emailStatus]}</p>
+        <p className="mt-3 text-xs text-muted-foreground">{EMAIL_NOTE[message.emailStatus]}</p>
       )}
       <div className="mt-4 flex flex-wrap gap-2">
         <a href={replyHref} className={`${secondaryButton} py-1.5`}>
@@ -136,6 +160,6 @@ function MessageCard({ message }: { message: Doc<"contactMessages"> }) {
           {error}
         </p>
       )}
-    </li>
+    </div>
   );
 }

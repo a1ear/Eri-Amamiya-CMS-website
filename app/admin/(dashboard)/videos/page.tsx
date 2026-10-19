@@ -2,6 +2,7 @@
 
 import { useAction, useMutation, useQuery } from "convex/react";
 import { useId, useRef, useState, type FormEvent } from "react";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import { fieldErrorsOf, messageOf } from "@/components/admin/errors";
 import { SortableList, reorderLocal } from "@/components/admin/SortableList";
 import { inputClass, primaryButton, secondaryButton } from "@/components/admin/styles";
@@ -22,7 +23,7 @@ export default function VideosPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-10">
       <h1 className="text-2xl font-semibold tracking-tight">Featured videos</h1>
-      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+      <p className="mt-1 text-sm text-muted-foreground">
         Paste a link to any video (TikTok, YouTube, Instagram, Facebook, Twitch…). Visitors tap the card to watch it there.
       </p>
 
@@ -33,9 +34,9 @@ export default function VideosPage() {
           Loading videos…
         </p>
       ) : videos.length === 0 ? (
-        <div className="mt-8 border border-dashed border-black p-8 text-center dark:border-white">
+        <div className="mt-8 border border-dashed border-[var(--line-strong)] p-8 text-center">
           <p className="font-medium">No featured videos yet</p>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             The videos section stays hidden on your site until you add one.
           </p>
         </div>
@@ -74,7 +75,7 @@ function AddVideoForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mt-6 space-y-4 border border-black p-4 dark:border-white">
+    <form onSubmit={onSubmit} noValidate className="mt-6 space-y-4 border border-[var(--line-strong)] p-4">
       <h2 className="text-sm font-semibold uppercase tracking-wider">Add a video</h2>
       <div className="space-y-1.5">
         <label htmlFor={`${id}-url`} className="block text-sm font-medium">
@@ -94,7 +95,7 @@ function AddVideoForm() {
           aria-describedby={`${id}-url-hint`}
           className={inputClass}
         />
-        <p id={`${id}-url-hint`} className="text-xs text-neutral-600 dark:text-neutral-400">
+        <p id={`${id}-url-hint`} className="text-xs text-muted-foreground">
           {errors.url ? (
             <span className="font-semibold text-current">{errors.url}</span>
           ) : preview?.ok ? (
@@ -141,6 +142,7 @@ type Video = NonNullable<ReturnType<typeof useQuery<typeof api.videos.listAdmin>
 function VideoRow({ video }: { video: Video }) {
   const update = useMutation(api.videos.update);
   const remove = useMutation(api.videos.remove);
+  const confirm = useConfirm();
   const generateUploadUrl = useMutation(api.videos.generateCoverUploadUrl);
   const setCover = useAction(api.videos.setCover);
   const removeCover = useMutation(api.videos.removeCover);
@@ -186,7 +188,7 @@ function VideoRow({ video }: { video: Video }) {
       }}
       className="flex flex-col gap-3 sm:flex-row"
     >
-      <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-neutral-200 sm:w-44 dark:bg-neutral-800">
+      <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-[var(--surface)] sm:w-44">
         {video.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail
           <img src={video.thumbnailUrl} alt="" className={`size-full object-cover ${video.visible ? "" : "opacity-40"}`} />
@@ -262,9 +264,13 @@ function VideoRow({ video }: { video: Video }) {
           </button>
           <button
             type="button"
-            onClick={() => {
-              if (window.confirm(`Delete “${video.title}”? This can't be undone.`))
-                void run(() => remove({ id: video._id }), "Deleted.");
+            onClick={async () => {
+              const ok = await confirm({
+                title: `Delete “${video.title}”?`,
+                description: "It's removed from your featured videos. This can't be undone.",
+                confirmLabel: "Delete video",
+              });
+              if (ok) void run(() => remove({ id: video._id }), "Deleted.");
             }}
             className={`${secondaryButton} ml-auto py-1.5`}
           >

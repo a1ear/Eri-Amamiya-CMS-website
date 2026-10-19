@@ -3,6 +3,11 @@
 import { ConvexError } from "convex/values";
 import Script from "next/script";
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import { CONTACT_RULES, type ContactTopic } from "@/convex/lib/contactRules";
 
@@ -25,8 +30,8 @@ function isRateLimited(err: unknown) {
 }
 const TOPICS = Object.entries(CONTACT_RULES.topics) as [ContactTopic, string][];
 
-const field =
-  "w-full border border-[var(--foreground)] bg-transparent px-3 py-2.5 text-base focus-visible:outline-2 focus-visible:outline-offset-2 aria-[invalid=true]:border-2";
+// shadcn fields at a 44px touch size (the Nova defaults are 32px).
+const field = "h-11 px-3 text-base aria-invalid:border-2 aria-invalid:border-foreground";
 
 type Status =
   | { kind: "idle" }
@@ -118,7 +123,7 @@ export function ContactForm() {
 
   if (status.kind === "sent") {
     return (
-      <div role="status" className="border border-[var(--foreground)] p-6 md:p-8">
+      <div role="status" className="item-enter border border-[var(--line-strong)] bg-[var(--card)] p-6 md:p-8">
         <p className="text-2xl font-semibold tracking-tight">Message sent. Thank you!</p>
         <p className="mt-2 text-[var(--muted)]">You&apos;ll get a reply at the email you entered.</p>
         <button
@@ -149,36 +154,28 @@ export function ContactForm() {
       />
       <form onSubmit={onSubmit} noValidate className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <label htmlFor={`${id}-name`} className="block text-sm font-medium">
-            Your name
-          </label>
-          <input id={`${id}-name`} name="name" autoComplete="name" required maxLength={CONTACT_RULES.name.max} aria-invalid={Boolean(errors.name)} aria-describedby={describedBy("name")} className={field} />
+          <Label htmlFor={`${id}-name`}>Your name</Label>
+          <Input id={`${id}-name`} name="name" autoComplete="name" required maxLength={CONTACT_RULES.name.max} aria-invalid={Boolean(errors.name)} aria-describedby={describedBy("name")} className={field} />
           {errorText("name")}
         </div>
         <div className="space-y-1.5">
-          <label htmlFor={`${id}-email`} className="block text-sm font-medium">
-            Email
-          </label>
-          <input id={`${id}-email`} name="email" type="email" autoComplete="email" inputMode="email" required aria-invalid={Boolean(errors.email)} aria-describedby={describedBy("email")} className={field} />
+          <Label htmlFor={`${id}-email`}>Email</Label>
+          <Input id={`${id}-email`} name="email" type="email" autoComplete="email" inputMode="email" required aria-invalid={Boolean(errors.email)} aria-describedby={describedBy("email")} className={field} />
           {errorText("email")}
         </div>
         <div className="space-y-1.5 sm:col-span-2">
-          <label htmlFor={`${id}-topic`} className="block text-sm font-medium">
-            What&apos;s it about?
-          </label>
-          <select id={`${id}-topic`} name="topic" defaultValue="collab" className={field}>
+          <Label htmlFor={`${id}-topic`}>What&apos;s it about?</Label>
+          <NativeSelect id={`${id}-topic`} name="topic" defaultValue="collab" className="w-full [&_select]:h-11 [&_select]:px-3 [&_select]:text-base">
             {TOPICS.map(([value, label]) => (
-              <option key={value} value={value}>
+              <NativeSelectOption key={value} value={value}>
                 {label}
-              </option>
+              </NativeSelectOption>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1.5 sm:col-span-2">
-          <label htmlFor={`${id}-message`} className="block text-sm font-medium">
-            Message
-          </label>
-          <textarea id={`${id}-message`} name="message" rows={6} required maxLength={CONTACT_RULES.message.max} aria-invalid={Boolean(errors.message)} aria-describedby={describedBy("message")} className={field} />
+          <Label htmlFor={`${id}-message`}>Message</Label>
+          <Textarea id={`${id}-message`} name="message" rows={6} required maxLength={CONTACT_RULES.message.max} aria-invalid={Boolean(errors.message)} aria-describedby={describedBy("message")} className="min-h-36 px-3 py-2.5 text-base aria-invalid:border-2 aria-invalid:border-foreground" />
           {errorText("message")}
         </div>
 
@@ -193,13 +190,14 @@ export function ContactForm() {
         </div>
 
         <div className="flex flex-wrap items-center gap-4 sm:col-span-2">
-          <button
+          <Button
             type="submit"
+            size="lg"
             disabled={status.kind === "sending"}
-            className="inline-flex min-h-12 items-center bg-[var(--foreground)] px-8 text-sm font-semibold uppercase tracking-[0.15em] text-[var(--background)] hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-50"
+            className="press h-12 px-8 text-sm font-semibold uppercase tracking-[0.15em]"
           >
             {status.kind === "sending" ? "Sending…" : "Send message"}
-          </button>
+          </Button>
           <p role={status.kind === "error" ? "alert" : "status"} className="text-sm font-medium">
             {status.kind === "error" && status.message}
           </p>

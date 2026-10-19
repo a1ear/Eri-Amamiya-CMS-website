@@ -3,6 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useId, useState, type FormEvent } from "react";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import { fieldErrorsOf, messageOf } from "@/components/admin/errors";
 import { inputClass, primaryButton, secondaryButton } from "@/components/admin/styles";
 import { api } from "@/convex/_generated/api";
@@ -19,7 +20,7 @@ export default function SchedulePage() {
     <main className="mx-auto w-full max-w-3xl px-4 py-10">
       <h1 className="text-2xl font-semibold tracking-tight">Streaming schedule</h1>
       {data && (
-        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           Enter times in <strong className="font-semibold text-current">{data.timeZone.replaceAll("_", " ")}</strong>.
           Visitors see them converted to their own time.{" "}
           <Link href="/admin/profile" className="underline underline-offset-2">
@@ -40,7 +41,7 @@ export default function SchedulePage() {
             </h2>
             <SlotForm mode="add" />
             {data.slots.length === 0 ? (
-              <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-400">
+              <p className="mt-4 text-sm text-muted-foreground">
                 No weekly streams yet. Your site shows &ldquo;Schedule coming soon&rdquo; until you add one.
               </p>
             ) : (
@@ -49,7 +50,7 @@ export default function SchedulePage() {
                   data.slots
                     .filter((s) => s.dayOfWeek === day)
                     .map((slot) => (
-                      <li key={slot._id} className="border border-black p-3 dark:border-white">
+                      <li key={slot._id} className="border border-[var(--line-strong)] p-3">
                         <SlotForm mode="edit" slot={slot} />
                       </li>
                     )),
@@ -58,11 +59,11 @@ export default function SchedulePage() {
             )}
           </section>
 
-          <section aria-labelledby="changes-heading" className="mt-12 border-t border-black pt-8 dark:border-white">
+          <section aria-labelledby="changes-heading" className="mt-12 border-t border-[var(--line-strong)] pt-8">
             <h2 id="changes-heading" className="text-sm font-semibold uppercase tracking-wider">
               Changes &amp; extra streams
             </h2>
-            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+            <p className="mt-1 text-sm text-muted-foreground">
               Taking a day off, or streaming at an unusual time? Add it here and your site updates.
             </p>
             <OverrideForm today={data.today} />
@@ -86,6 +87,7 @@ function SlotForm({ mode, slot }: { mode: "add" | "edit"; slot?: Doc<"scheduleSl
   const add = useMutation(api.schedule.addSlot);
   const update = useMutation(api.schedule.updateSlot);
   const remove = useMutation(api.schedule.removeSlot);
+  const confirm = useConfirm();
   const id = useId();
   const initial = {
     day: String(slot?.dayOfWeek ?? 1),
@@ -137,7 +139,7 @@ function SlotForm({ mode, slot }: { mode: "add" | "edit"; slot?: Doc<"scheduleSl
     <form
       onSubmit={onSubmit}
       noValidate
-      className={`grid gap-3 sm:grid-cols-[9rem_7rem_7rem_minmax(0,1fr)] sm:items-end ${mode === "add" ? "mt-4 border border-black p-4 dark:border-white" : ""}`}
+      className={`grid gap-3 sm:grid-cols-[9rem_7rem_7rem_minmax(0,1fr)] sm:items-end ${mode === "add" ? "mt-4 border border-[var(--line-strong)] p-4" : ""}`}
     >
       <div className="space-y-1">
         <label htmlFor={`${id}-day`} className="text-xs font-medium">
@@ -165,7 +167,7 @@ function SlotForm({ mode, slot }: { mode: "add" | "edit"; slot?: Doc<"scheduleSl
       </div>
       <div className="space-y-1">
         <label htmlFor={`${id}-title`} className="text-xs font-medium">
-          What you&apos;re streaming <span className="font-normal text-neutral-500 dark:text-neutral-400">(optional)</span>
+          What you&apos;re streaming <span className="font-normal text-muted-foreground">(optional)</span>
         </label>
         <input id={`${id}-title`} value={form.title} maxLength={SCHEDULE_RULES.title.max + 10} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Just Chatting" aria-invalid={Boolean(errors.title)} className={`${inputClass} py-1.5 text-sm`} />
       </div>
@@ -190,7 +192,12 @@ function SlotForm({ mode, slot }: { mode: "add" | "edit"; slot?: Doc<"scheduleSl
           <button
             type="button"
             onClick={async () => {
-              if (!window.confirm(`Remove the ${DAY_NAMES[slot!.dayOfWeek]} ${formatTime(slot!.startMinute)} stream?`)) return;
+              const ok = await confirm({
+                title: `Remove the ${DAY_NAMES[slot!.dayOfWeek]} ${formatTime(slot!.startMinute)} stream?`,
+                description: "It disappears from your weekly schedule on the site.",
+                confirmLabel: "Remove stream",
+              });
+              if (!ok) return;
               try {
                 await remove({ id: slot!._id });
               } catch (err) {
@@ -251,7 +258,7 @@ function OverrideForm({ today }: { today: string }) {
   const errorText = Object.values(errors).join(" ");
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mt-4 space-y-4 border border-black p-4 dark:border-white">
+    <form onSubmit={onSubmit} noValidate className="mt-4 space-y-4 border border-[var(--line-strong)] p-4">
       <fieldset className="flex flex-wrap gap-x-6 gap-y-2">
         <legend className="sr-only">Type of change</legend>
         {(
@@ -298,7 +305,7 @@ function OverrideForm({ today }: { today: string }) {
       </div>
       <div className="space-y-1">
         <label htmlFor={`${id}-note`} className="text-xs font-medium">
-          Note for viewers <span className="font-normal text-neutral-500 dark:text-neutral-400">(optional)</span>
+          Note for viewers <span className="font-normal text-muted-foreground">(optional)</span>
         </label>
         <input id={`${id}-note`} value={form.note} maxLength={SCHEDULE_RULES.note.max + 10} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder={form.kind === "cancelled" ? "e.g. At AniCon, back Monday!" : "e.g. Costume contest at midnight"} className={`${inputClass} py-1.5 text-sm`} />
       </div>
@@ -329,11 +336,11 @@ function OverrideRow({ override }: { override: Doc<"scheduleOverrides"> }) {
       : `${override.title} · ${formatTime(override.startMinute!)}–${formatTime((override.startMinute! + override.durationMinutes!) % 1440)}`;
 
   return (
-    <li className="flex flex-wrap items-center gap-3 border border-black px-3 py-2 text-sm dark:border-white">
+    <li className="flex flex-wrap items-center gap-3 border border-[var(--line-strong)] px-3 py-2 text-sm">
       <span className="w-28 font-medium tabular-nums">{date}</span>
       <span className="min-w-0 flex-1">
         {what}
-        {override.note && <span className="text-neutral-600 dark:text-neutral-400"> — {override.note}</span>}
+        {override.note && <span className="text-muted-foreground"> — {override.note}</span>}
       </span>
       <button
         type="button"

@@ -30,7 +30,7 @@ export function AdminNav() {
   }
 
   return (
-    <header className="border-b border-black dark:border-white">
+    <header className="border-b border-[var(--line-strong)]">
       <nav
         aria-label="Admin"
         className="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 text-sm"
@@ -48,7 +48,7 @@ export function AdminNav() {
             >
               {label}
               {href === "/admin/inbox" && unread ? (
-                <span className="ml-1.5 inline-flex min-w-5 justify-center bg-black px-1 text-xs font-semibold text-white dark:bg-white dark:text-black">
+                <span className="ml-1.5 inline-flex min-w-5 justify-center bg-primary px-1 text-xs font-semibold text-primary-foreground">
                   {unread}
                   <span className="sr-only"> new</span>
                 </span>
@@ -68,7 +68,7 @@ export function AdminNav() {
             type="button"
             onClick={signOut}
             disabled={signingOut}
-            className="border border-black px-3 py-1 hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 dark:border-white dark:hover:bg-white dark:hover:text-black"
+            className="border border-[var(--line-strong)] px-3 py-1 hover:bg-primary hover:text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
           >
             {signingOut ? "Signing out…" : "Sign out"}
           </button>

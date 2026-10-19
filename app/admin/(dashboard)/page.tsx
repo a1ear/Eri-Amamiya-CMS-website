@@ -19,7 +19,7 @@ export default function AdminHome() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-10">
       <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-      <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400" role="status">
+      <p className="mt-2 text-sm text-muted-foreground" role="status">
         {me === undefined ? "Loading…" : `Signed in as ${me.email}`}
       </p>
 
@@ -28,7 +28,7 @@ export default function AdminHome() {
           <li key={section.href}>
             <Link
               href={section.href}
-              className="block h-full border border-black p-4 hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 dark:border-white dark:hover:bg-white dark:hover:text-black"
+              className="block h-full border border-[var(--line-strong)] p-4 hover:bg-primary hover:text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               <span className="font-medium">{section.title}</span>
               <span className="mt-1 block text-sm opacity-75">{section.description}</span>

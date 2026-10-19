@@ -11,6 +11,7 @@ import {
   type FieldErrors,
   type ProfileInput,
 } from "@/convex/lib/profileRules";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import { ChangePassword } from "@/components/admin/ChangePassword";
 import { inputClass, primaryButton, secondaryButton } from "@/components/admin/styles";
 import { resizeImage } from "@/lib/imageResize";
@@ -22,7 +23,7 @@ export default function ProfilePage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-10">
       <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
-      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+      <p className="mt-1 text-sm text-muted-foreground">
         This is what visitors see at the top of your site and in the About section.
       </p>
 
@@ -61,6 +62,7 @@ function AvatarEditor({ url, name }: { url: string | null; name: string }) {
   const generateUploadUrl = useMutation(api.profile.generateAvatarUploadUrl);
   const setAvatar = useAction(api.profile.setAvatar);
   const removeAvatar = useMutation(api.profile.removeAvatar);
+  const confirm = useConfirm();
   const inputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<{ kind: "idle" | "busy" | "ok" | "error"; text?: string }>({
     kind: "idle",
@@ -93,7 +95,12 @@ function AvatarEditor({ url, name }: { url: string | null; name: string }) {
   }
 
   async function onRemove() {
-    if (!window.confirm("Remove your profile photo? Visitors will see your initials instead.")) return;
+    const ok = await confirm({
+      title: "Remove your profile photo?",
+      description: "Visitors will see your initials instead until you upload a new one.",
+      confirmLabel: "Remove photo",
+    });
+    if (!ok) return;
     try {
       setStatus({ kind: "busy", text: "Removing…" });
       await removeAvatar();
@@ -106,12 +113,12 @@ function AvatarEditor({ url, name }: { url: string | null; name: string }) {
   const busy = status.kind === "busy";
 
   return (
-    <section aria-labelledby="avatar-heading" className="mt-8 border-t border-black pt-6 dark:border-white">
+    <section aria-labelledby="avatar-heading" className="mt-8 border-t border-[var(--line-strong)] pt-6">
       <h2 id="avatar-heading" className="text-sm font-semibold uppercase tracking-wider">
         Profile photo
       </h2>
       <div className="mt-4 flex flex-wrap items-center gap-5">
-        <div className="size-24 shrink-0 overflow-hidden rounded-full border border-black dark:border-white">
+        <div className="size-24 shrink-0 overflow-hidden rounded-full border border-[var(--line-strong)]">
           {url ? (
             // eslint-disable-next-line @next/next/no-img-element -- admin preview of a Convex URL
             <img src={url} alt={`Current photo of ${name}`} className="size-full object-cover" />
@@ -140,7 +147,7 @@ function AvatarEditor({ url, name }: { url: string | null; name: string }) {
           )}
         </div>
       </div>
-      <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400">
+      <p className="mt-3 text-xs text-muted-foreground">
         JPG, PNG or WebP. Large photos are resized automatically.
       </p>
       <p
@@ -192,7 +199,7 @@ function ProfileForm({ initial }: { initial: ProfileInput }) {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mt-8 space-y-6 border-t border-black pt-6 dark:border-white">
+    <form onSubmit={onSubmit} noValidate className="mt-8 space-y-6 border-t border-[var(--line-strong)] pt-6">
       <h2 className="text-sm font-semibold uppercase tracking-wider">Details</h2>
 
       <Field label="Display name" value={values.displayName} max={PROFILE_LIMITS.displayName.max} error={errors.displayName}>
@@ -240,7 +247,7 @@ function ProfileForm({ initial }: { initial: ProfileInput }) {
         {(p) => <input {...p} type="email" autoComplete="email" onChange={(e) => set("notifyEmail", e.target.value)} />}
       </Field>
 
-      <div className="flex flex-wrap items-center gap-4 border-t border-black pt-6 dark:border-white">
+      <div className="flex flex-wrap items-center gap-4 border-t border-[var(--line-strong)] pt-6">
         <button type="submit" disabled={!dirty || status === "saving"} className={primaryButton}>
           {status === "saving" ? "Saving…" : "Save changes"}
         </button>
@@ -295,7 +302,7 @@ function Field({
           {label}
         </label>
         {max !== undefined && (
-          <span className={`text-xs tabular-nums ${over ? "font-semibold" : "text-neutral-500 dark:text-neutral-400"}`} aria-hidden>
+          <span className={`text-xs tabular-nums ${over ? "font-semibold" : "text-muted-foreground"}`} aria-hidden>
             {value.length}/{max}
           </span>
         )}
@@ -309,7 +316,7 @@ function Field({
         "aria-describedby": `${id}-hint ${id}-error`,
       })}
       {hint && (
-        <p id={`${id}-hint`} className="text-xs text-neutral-600 dark:text-neutral-400">
+        <p id={`${id}-hint`} className="text-xs text-muted-foreground">
           {hint}
         </p>
       )}

@@ -10,12 +10,12 @@ export async function About() {
     <section
       id="about"
       aria-labelledby="about-heading"
-      className="scroll-mt-16 border-t border-[var(--foreground)]"
+      className="scroll-mt-16 border-t border-[var(--line)]"
     >
       <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-16 md:grid-cols-[12rem_minmax(0,1fr)] md:py-24">
         <h2
           id="about-heading"
-          className="text-xs font-medium uppercase tracking-[0.25em] text-[var(--muted)]"
+          className="section-label text-xs font-medium uppercase tracking-[0.25em] text-[var(--muted)]"
         >
           About me
         </h2>

@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { useId, useState, type FormEvent } from "react";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import { fieldErrorsOf, messageOf } from "@/components/admin/errors";
 import { SortableList, reorderLocal } from "@/components/admin/SortableList";
 import { inputClass, primaryButton, secondaryButton } from "@/components/admin/styles";
@@ -32,7 +33,7 @@ export default function SocialsPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-10">
       <h1 className="text-2xl font-semibold tracking-tight">Social links</h1>
-      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+      <p className="mt-1 text-sm text-muted-foreground">
         Shown in your site&apos;s header area and footer. Your first Twitch, Kick, YouTube or TikTok link becomes the
         main &ldquo;Watch&rdquo; button.
       </p>
@@ -44,9 +45,9 @@ export default function SocialsPage() {
           Loading links…
         </p>
       ) : items.length === 0 ? (
-        <div className="mt-8 border border-dashed border-black p-8 text-center dark:border-white">
+        <div className="mt-8 border border-dashed border-[var(--line-strong)] p-8 text-center">
           <p className="font-medium">No links yet</p>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">Add where people can follow you.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Add where people can follow you.</p>
         </div>
       ) : (
         <SortableList items={items} itemLabel={(l) => l.label} onMove={(id, afterId) => move({ id, afterId })}>
@@ -108,7 +109,7 @@ function LinkFields({
           spellCheck={false}
           className={`${inputClass} py-1.5 text-sm`}
         />
-        <p id={`${idPrefix}-url-hint`} className="truncate text-xs text-neutral-600 dark:text-neutral-400">
+        <p id={`${idPrefix}-url-hint`} className="truncate text-xs text-muted-foreground">
           {errors.url ? (
             <span className="font-semibold text-current">{errors.url}</span>
           ) : preview?.ok ? (
@@ -120,7 +121,7 @@ function LinkFields({
       </div>
       <div className="space-y-1 sm:col-start-2">
         <label htmlFor={`${idPrefix}-label`} className="text-xs font-medium">
-          Button text <span className="font-normal text-neutral-500 dark:text-neutral-400">(optional)</span>
+          Button text <span className="font-normal text-muted-foreground">(optional)</span>
         </label>
         <input
           id={`${idPrefix}-label`}
@@ -159,7 +160,7 @@ function AddLinkForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mt-6 space-y-4 border border-black p-4 dark:border-white">
+    <form onSubmit={onSubmit} noValidate className="mt-6 space-y-4 border border-[var(--line-strong)] p-4">
       <h2 className="text-sm font-semibold uppercase tracking-wider">Add a link</h2>
       <LinkFields
         idPrefix={id}
@@ -189,6 +190,7 @@ function LinkRow({
 }) {
   const update = useMutation(api.socials.update);
   const remove = useMutation(api.socials.remove);
+  const confirm = useConfirm();
   const id = useId();
   const saved = { platform: link.platform, url: link.url, label: link.label };
   const [form, setForm] = useState(saved);
@@ -237,7 +239,12 @@ function LinkRow({
         <button
           type="button"
           onClick={async () => {
-            if (!window.confirm(`Remove your ${link.label} link?`)) return;
+            const ok = await confirm({
+              title: `Remove your ${link.label} link?`,
+              description: "It disappears from your site's header and footer.",
+              confirmLabel: "Remove link",
+            });
+            if (!ok) return;
             try {
               await remove({ id: link.id });
             } catch (err) {

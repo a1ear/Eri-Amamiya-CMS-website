@@ -3,6 +3,7 @@
 import { useAction, useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { useId, useRef, useState, type DragEvent, type FormEvent } from "react";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import { messageOf } from "@/components/admin/errors";
 import { SortableList, reorderLocal } from "@/components/admin/SortableList";
 import { inputClass, primaryButton, secondaryButton } from "@/components/admin/styles";
@@ -25,7 +26,7 @@ export default function PhotosPage() {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">Photos</h1>
         {photos && (
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          <p className="text-sm text-muted-foreground">
             {photos.length} {photos.length === 1 ? "photo" : "photos"} ·{" "}
             {photos.filter((p) => p.visible).length} shown on your site
           </p>
@@ -39,9 +40,9 @@ export default function PhotosPage() {
           Loading photos…
         </p>
       ) : photos.length === 0 ? (
-        <div className="mt-8 border border-dashed border-black p-8 text-center dark:border-white">
+        <div className="mt-8 border border-dashed border-[var(--line-strong)] p-8 text-center">
           <p className="font-medium">No photos yet</p>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             Add your first cosplay photos above. Newest photos appear first on your site.
           </p>
         </div>
@@ -125,7 +126,7 @@ function Uploader() {
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
       className={`mt-6 border-2 border-dashed p-6 text-center ${
-        dragging ? "border-black bg-neutral-100 dark:border-white dark:bg-neutral-900" : "border-neutral-400"
+        dragging ? "border-[var(--line-strong)] bg-[var(--surface)]" : "border-[var(--line-strong)]"
       }`}
     >
       <label className={`${primaryButton} inline-block cursor-pointer has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2`}>
@@ -140,7 +141,7 @@ function Uploader() {
           className="sr-only"
         />
       </label>
-      <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400">
+      <p className="mt-3 text-xs text-muted-foreground">
         Or drag photos here. JPG, PNG or WebP; large photos are resized automatically.
       </p>
 
@@ -155,7 +156,7 @@ function Uploader() {
               .map((q) => (
                 <li key={q.key} className="flex justify-between gap-3">
                   <span className="truncate">{q.name}</span>
-                  <span className={q.state === "error" ? "font-semibold" : "text-neutral-500 dark:text-neutral-400"}>
+                  <span className={q.state === "error" ? "font-semibold" : "text-muted-foreground"}>
                     {q.state === "error" ? q.error : q.state === "uploading" ? "Uploading…" : "Waiting"}
                   </span>
                 </li>
@@ -171,6 +172,7 @@ function Uploader() {
 
 function PhotoRow({ photo, position }: { photo: Photo; position: number }) {
   const update = useMutation(api.photos.update);
+  const confirm = useConfirm();
   const remove = useMutation(api.photos.remove);
   const [caption, setCaption] = useState(photo.caption);
   const [tag, setTag] = useState(photo.tag);
@@ -201,7 +203,12 @@ function PhotoRow({ photo, position }: { photo: Photo; position: number }) {
   }
 
   async function onDelete() {
-    if (!window.confirm(`Delete “${label}”? This removes it from your site and can't be undone.`)) return;
+    const ok = await confirm({
+      title: `Delete “${label}”?`,
+      description: "It's removed from your site and the file is deleted. This can't be undone.",
+      confirmLabel: "Delete photo",
+    });
+    if (!ok) return;
     try {
       await remove({ id: photo._id });
     } catch {
@@ -211,7 +218,7 @@ function PhotoRow({ photo, position }: { photo: Photo; position: number }) {
 
   return (
     <form onSubmit={onSubmit} className="flex gap-3">
-        <div className="relative size-28 shrink-0 overflow-hidden bg-neutral-200 sm:size-32 dark:bg-neutral-800">
+        <div className="relative size-28 shrink-0 overflow-hidden bg-[var(--surface)] sm:size-32">
           {photo.url && (
             // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail of a Convex URL
             <img src={photo.url} alt="" className={`size-full object-cover ${photo.visible ? "" : "opacity-40"}`} />

@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { About } from "@/components/public/About";
+import { AmbientBackground } from "@/components/public/AmbientBackground";
 import { Contact } from "@/components/public/Contact";
 import { Gallery } from "@/components/public/Gallery";
 import { HashScroll } from "@/components/public/HashScroll";
 import { Hero, HeroSkeleton } from "@/components/public/Hero";
 import { JsonLd } from "@/components/public/JsonLd";
 import { Schedule } from "@/components/public/Schedule";
+import { ScrollReveals } from "@/components/public/ScrollReveals";
 import { SiteFooter } from "@/components/public/SiteFooter";
 import { SiteNavFallback, SiteNavLinks } from "@/components/public/SiteNav";
 import { Videos } from "@/components/public/Videos";
@@ -30,13 +32,14 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function Home() {
   return (
     <>
+      <AmbientBackground />
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-[var(--foreground)] focus:px-4 focus:py-2 focus:text-[var(--background)]"
       >
         Skip to content
       </a>
-      <header className="sticky top-0 z-40 border-b border-[var(--foreground)] bg-[var(--background)]/90 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[var(--background)]/75 backdrop-blur-md">
         <nav aria-label="Sections" className="mx-auto flex min-h-14 w-full max-w-6xl items-center gap-4 px-4 text-sm">
           <Suspense fallback={<SiteNavFallback />}>
             <SiteNavLinks />
@@ -54,6 +57,8 @@ export default function Home() {
           <Schedule />
           <HashScroll />
           <JsonLd />
+          {/* Loads GSAP after the page is interactive; animates only unseen sections. */}
+          <ScrollReveals />
         </Suspense>
         <Contact />
       </main>

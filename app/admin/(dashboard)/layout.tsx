@@ -29,7 +29,7 @@ async function AdminGate({ children }: { children: ReactNode }) {
 
 function GateFallback() {
   return (
-    <p role="status" className="p-8 text-sm text-neutral-500 dark:text-neutral-400">
+    <p role="status" className="p-8 text-sm text-muted-foreground">
       Checking your session…
     </p>
   );

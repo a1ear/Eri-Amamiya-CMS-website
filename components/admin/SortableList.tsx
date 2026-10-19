@@ -75,7 +75,7 @@ export function SortableList<T extends Item>({
 
   return (
     <>
-      <p id={helpId} className="mt-8 text-xs text-neutral-600 dark:text-neutral-400">
+      <p id={helpId} className="mt-8 text-xs text-muted-foreground">
         Drag the handle, or use the arrow buttons, to change the order. The top item shows first on your site.
       </p>
       {error && (
@@ -133,7 +133,7 @@ function SortableRow({
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex gap-3 border border-black bg-[var(--background)] p-3 dark:border-white ${
+      className={`flex gap-3 border border-[var(--line-strong)] bg-[var(--background)] p-3 ${
         isDragging ? "relative z-10 shadow-lg" : ""
       }`}
     >

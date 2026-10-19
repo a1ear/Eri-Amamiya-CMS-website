@@ -42,7 +42,7 @@ export function ChangePassword() {
   }
 
   return (
-    <section aria-labelledby={`${id}-heading`} className="mt-12 border-t border-black pt-6 dark:border-white">
+    <section aria-labelledby={`${id}-heading`} className="mt-12 border-t border-[var(--line-strong)] pt-6">
       <h2 id={`${id}-heading`} className="text-sm font-semibold uppercase tracking-wider">
         Password
       </h2>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { upcomingStreams, type Override, type Slot } from "@/convex/lib/schedule";
 
 type Props = {
@@ -80,13 +82,17 @@ export function ScheduleView({ schedule, nowMs: initialNow, creator, watchUrl }:
   return (
     <div>
       {next && (
-        <div className="border border-[var(--foreground)] p-6 md:p-8">
+        <div className="relative overflow-hidden border border-[var(--line-strong)] bg-[var(--card)]/60 p-6 backdrop-blur-sm md:p-8">
           <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.25em]">
             {isLive ? (
-              <>
-                <span aria-hidden className="size-2 animate-pulse rounded-full bg-[var(--foreground)] motion-reduce:animate-none" />
+              <Badge className="gap-2 px-2.5 uppercase tracking-[0.2em]">
+                {/* Live pulse: the one looping motion on the site; a static dot under reduced motion. */}
+                <span aria-hidden className="relative flex size-2">
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-[var(--background)] opacity-60 motion-reduce:animate-none" />
+                  <span className="relative inline-flex size-2 rounded-full bg-[var(--background)]" />
+                </span>
                 Live now
-              </>
+              </Badge>
             ) : (
               <span className="text-[var(--muted)]">Next stream · {relative(next.startMs, nowMs)}</span>
             )}
@@ -97,15 +103,12 @@ export function ScheduleView({ schedule, nowMs: initialNow, creator, watchUrl }:
           {!isLive && <p className="mt-1 text-lg">{next.title}</p>}
           {next.note && <p className="mt-2 text-[var(--muted)]">{next.note}</p>}
           {watchUrl && (
-            <a
-              href={watchUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-6 inline-flex min-h-12 items-center bg-[var(--foreground)] px-6 text-sm font-semibold uppercase tracking-[0.15em] text-[var(--background)] hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-4"
-            >
-              {isLive ? "Watch now" : "Follow to get notified"}
-              <span className="sr-only"> (opens in new tab)</span>
-            </a>
+            <Button asChild size="lg" className="press mt-6 h-12 px-6 text-sm font-semibold uppercase tracking-[0.15em]">
+              <a href={watchUrl} target="_blank" rel="noopener noreferrer">
+                {isLive ? "Watch now" : "Follow to get notified"}
+                <span className="sr-only"> (opens in new tab)</span>
+              </a>
+            </Button>
           )}
         </div>
       )}
@@ -113,7 +116,7 @@ export function ScheduleView({ schedule, nowMs: initialNow, creator, watchUrl }:
       {(thisWeek.length > 1 || offThisWeek.length > 0) && (
         <>
           <h3 className="mt-10 text-xs font-medium uppercase tracking-[0.25em] text-[var(--muted)]">Next 7 days</h3>
-          <ul className="mt-4 divide-y divide-[var(--foreground)]/20 border-y border-[var(--foreground)]/20">
+          <ul className="mt-4 divide-y divide-[var(--line)] border-y border-[var(--line)]">
             {[
               ...thisWeek.map((s) => ({ type: "stream" as const, key: `s${s.startMs}`, sortMs: s.startMs, stream: s })),
               ...offThisWeek.map((d) => ({ type: "off" as const, key: `o${d.date}`, sortMs: Date.parse(`${d.date}T00:00:00Z`), off: d })),
@@ -129,9 +132,9 @@ export function ScheduleView({ schedule, nowMs: initialNow, creator, watchUrl }:
                     <span className="col-start-2 sm:col-start-auto">
                       {row.stream.title}
                       {row.stream.kind === "special" && (
-                        <span className="ml-2 border border-[var(--foreground)] px-1.5 py-0.5 text-[0.65rem] font-medium uppercase tracking-wider">
+                        <Badge variant="outline" className="ml-2 align-middle text-[0.65rem] uppercase tracking-wider">
                           Special
-                        </span>
+                        </Badge>
                       )}
                     </span>
                   </li>

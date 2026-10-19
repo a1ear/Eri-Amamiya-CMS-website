@@ -6,7 +6,7 @@ export async function SiteFooter() {
   const name = profile?.displayName ?? "";
 
   return (
-    <footer className="border-t border-[var(--foreground)]">
+    <footer className="border-t border-[var(--line)]">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-12 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-[clamp(1.75rem,5vw,3rem)] font-semibold leading-none tracking-[-0.03em]">{name}</p>

@@ -38,7 +38,7 @@ export default function LoginPage() {
     <main className="flex min-h-full flex-1 items-center justify-center px-4 py-16">
       <form
         onSubmit={onSubmit}
-        className="w-full max-w-sm space-y-5 border border-black p-6 dark:border-white"
+        className="w-full max-w-sm space-y-5 border border-[var(--line-strong)] p-6"
       >
         <h1 className="text-xl font-semibold tracking-tight">Admin sign in</h1>
 
@@ -52,7 +52,7 @@ export default function LoginPage() {
             type="email"
             autoComplete="username"
             required
-            className="w-full border border-black bg-transparent px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 dark:border-white"
+            className="w-full border border-[var(--line-strong)] bg-transparent px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
           />
         </div>
 
@@ -66,7 +66,7 @@ export default function LoginPage() {
             type="password"
             autoComplete="current-password"
             required
-            className="w-full border border-black bg-transparent px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 dark:border-white"
+            className="w-full border border-[var(--line-strong)] bg-transparent px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
           />
         </div>
 
@@ -79,7 +79,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={pending}
-          className="w-full bg-black px-4 py-2.5 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 dark:bg-white dark:text-black"
+          className="press w-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
         >
           {pending ? "Signing in…" : "Sign in"}
         </button>
