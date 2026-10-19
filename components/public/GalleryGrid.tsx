@@ -23,10 +23,10 @@ const Lightbox = dynamic(loadLightbox, {
  * natural aspect ratio; tapping a neighbour brings it to the centre.
  */
 export function GalleryGrid({ photos, creator }: { photos: PublicPhoto[]; creator: string }) {
-  const { active, go, dragging, regionProps, viewportProps, trackStyle } = useShowcase(photos.length);
+  const { active, pos, slides, step, goTo, dragging, snapping, regionProps, viewportProps, trackStyle } = useShowcase(photos.length);
   const [open, setOpen] = useState<number | null>(null);
   const triggers = useRef<(HTMLButtonElement | null)[]>([]);
-  const returnTo = useRef<number | null>(null);
+  const returnFocus = useRef(false);
   const prefetched = useRef(false);
   const prefetch = () => {
     if (!prefetched.current) {
@@ -40,18 +40,18 @@ export function GalleryGrid({ photos, creator }: { photos: PublicPhoto[]; creato
   // which the carousel has moved to the centre.
   const close = useCallback(
     (lastIndex: number) => {
-      returnTo.current = lastIndex;
-      go(lastIndex);
+      returnFocus.current = true;
+      goTo(lastIndex);
       setOpen(null);
     },
-    [go],
+    [goTo],
   );
   useEffect(() => {
-    if (open === null && returnTo.current !== null) {
-      triggers.current[returnTo.current]?.focus({ preventScroll: true });
-      returnTo.current = null;
+    if (open === null && returnFocus.current) {
+      triggers.current[pos]?.focus({ preventScroll: true });
+      returnFocus.current = false;
     }
-  }, [open]);
+  }, [open, pos]);
 
   const current = photos[active];
   if (!current) return null;
@@ -61,28 +61,32 @@ export function GalleryGrid({ photos, creator }: { photos: PublicPhoto[]; creato
       <div {...regionProps} aria-label="Cosplay gallery" onPointerEnter={prefetch} onTouchStart={prefetch} onFocus={prefetch}>
         <div
           {...viewportProps}
-          className="showcase showcase-photos relative w-full touch-pan-y select-none overflow-hidden py-2"
+          className={cn(
+            "showcase showcase-photos relative w-full touch-pan-y select-none overflow-hidden py-2",
+            snapping && "is-snapping",
+          )}
         >
           <ul className={cn("showcase-track flex w-max gap-[var(--g)]", !dragging && "is-animating")} style={trackStyle}>
-            {photos.map((photo, i) => {
-              const isActive = i === active;
+            {slides.map((slide) => {
+              const photo = photos[slide.index];
+              const isActive = slide.pos === pos;
               return (
                 <li
-                  key={photo.id}
+                  key={`${slide.copy}-${photo.id}`}
                   role="group"
                   aria-roledescription="slide"
-                  aria-label={`${i + 1} of ${photos.length}`}
+                  aria-label={`${slide.index + 1} of ${photos.length}`}
                   aria-hidden={!isActive}
                   data-active={isActive}
-                  className={cn("showcase-slide w-[var(--w)] shrink-0", i < active ? "origin-right" : "origin-left")}
+                  className={cn("showcase-slide w-[var(--w)] shrink-0", slide.pos < pos ? "origin-right" : "origin-left")}
                 >
                   <button
                     ref={(el) => {
-                      triggers.current[i] = el;
+                      triggers.current[slide.pos] = el;
                     }}
                     type="button"
                     tabIndex={isActive ? 0 : -1}
-                    onClick={() => (isActive ? setOpen(i) : go(i))}
+                    onClick={() => (isActive ? setOpen(slide.index) : step(slide.pos - pos))}
                     aria-label={`Open ${photoAlt(photo, creator)}`}
                     className="group pixel-corners relative block aspect-[4/5] w-full overflow-hidden border border-[var(--line-strong)] bg-[var(--surface)] focus-visible:outline-2 focus-visible:-outline-offset-4"
                   >
@@ -124,7 +128,7 @@ export function GalleryGrid({ photos, creator }: { photos: PublicPhoto[]; creato
           >
             {"{"} View full photo {"}"}
           </button>
-          <ShowcaseControls active={active} count={photos.length} go={go} noun="photo" />
+          <ShowcaseControls active={active} count={photos.length} step={step} noun="photo" />
         </div>
       </div>
 

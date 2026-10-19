@@ -33,7 +33,7 @@ function saveData() {
 }
 
 export function VideoShowcase({ videos }: { videos: PublicVideo[] }) {
-  const { active, go, dragging, regionProps, viewportProps, trackStyle } = useShowcase(videos.length);
+  const { active, pos, slides, step, dragging, snapping, regionProps, viewportProps, trackStyle } = useShowcase(videos.length);
   const [inView, setInView] = useState(false);
   const [settledOn, setSettledOn] = useState<number | null>(null);
   const [loaded, setLoaded] = useState<string | null>(null);
@@ -66,7 +66,7 @@ export function VideoShowcase({ videos }: { videos: PublicVideo[] }) {
     <div {...regionProps} aria-label="Featured videos">
       <div
         {...viewportProps}
-        className="showcase relative w-full touch-pan-y select-none overflow-hidden py-2"
+        className={cn("showcase relative w-full touch-pan-y select-none overflow-hidden py-2", snapping && "is-snapping")}
       >
         <ul
           className={cn(
@@ -75,17 +75,18 @@ export function VideoShowcase({ videos }: { videos: PublicVideo[] }) {
           )}
           style={trackStyle}
         >
-          {videos.map((video, i) => {
-            const isActive = i === active;
+          {slides.map((slide) => {
+            const video = videos[slide.index];
+            const isActive = slide.pos === pos;
             return (
               <li
-                key={video.id}
+                key={`${slide.copy}-${video.id}`}
                 role="group"
                 aria-roledescription="slide"
-                aria-label={`${i + 1} of ${videos.length}: ${video.title}`}
+                aria-label={`${slide.index + 1} of ${videos.length}: ${video.title}`}
                 aria-hidden={!isActive}
                 data-active={isActive}
-                className={cn("showcase-slide w-[var(--w)] shrink-0", i < active ? "origin-right" : "origin-left")}
+                className={cn("showcase-slide w-[var(--w)] shrink-0", slide.pos < pos ? "origin-right" : "origin-left")}
               >
                 <a
                   href={video.url}
@@ -96,7 +97,7 @@ export function VideoShowcase({ videos }: { videos: PublicVideo[] }) {
                   onClick={(e) => {
                     if (!isActive) {
                       e.preventDefault();
-                      go(i);
+                      step(slide.pos - pos);
                     }
                   }}
                   className="pixel-corners relative block aspect-video overflow-hidden border border-[var(--line-strong)] bg-[#050505] focus-visible:outline-2 focus-visible:-outline-offset-4"
@@ -167,7 +168,7 @@ export function VideoShowcase({ videos }: { videos: PublicVideo[] }) {
           {"{"} Watch on {current.platformLabel} <span aria-hidden className="ml-2">↗</span> {"}"}
           <span className="sr-only"> (opens in new tab)</span>
         </a>
-        <ShowcaseControls active={active} count={videos.length} go={go} noun="video" />
+        <ShowcaseControls active={active} count={videos.length} step={step} noun="video" />
       </div>
     </div>
   );

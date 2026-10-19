@@ -418,6 +418,11 @@ main {
   outline: 2px solid var(--foreground);
   outline-offset: 4px;
 }
+/* The loop jump back to the middle copy must not be seen. */
+.showcase.is-snapping .showcase-track,
+.showcase.is-snapping .showcase-slide {
+  transition: none;
+}
 @media (prefers-reduced-motion: reduce) {
   .showcase-track.is-animating,
   .showcase-slide {

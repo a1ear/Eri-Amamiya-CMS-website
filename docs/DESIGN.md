@@ -268,10 +268,18 @@ carry meaning are paired with `sr-only` text or an `aria-label`.
   `min(78cqw, 56rem)` wide (container units, so no measuring), neighbours peek
   in at the edges at `scale(0.86)` and 45% opacity. Below: the active title
   (`.arcade-display`, `aria-live`), `{ Watch on {Platform} ↗ }`, then square
-  ← → buttons around a `02 / 05` counter (disabled at the ends, no wrap).
+  ← → buttons around a `02 / 05` counter.
 - Input: buttons, ←/→ keys anywhere in the carousel, drag/swipe (6px to start,
-  12% of the width or a flick to change; rubber-band at the ends; the click
-  after a drag is swallowed), or tap a peeking card to bring it to centre.
+  12% of the width or a flick to change; the click after a drag is
+  swallowed), or tap a peeking card to bring it to centre.
+- **Loops** (both carousels, 2+ cards): the slides render three times and
+  the carousel starts on the middle copy, so the last card peeks in left of
+  the first. Moving past an end carries on into the next copy; once the
+  650ms move settles, the position jumps to the same card in the middle copy
+  with transitions off for two frames (`.is-snapping`), so the jump is never
+  seen. Focus follows to the active copy. Copies are `aria-hidden` and out of
+  the tab order like any inactive card, and images stay lazy, so the extra
+  copies cost DOM, not downloads. A single card doesn't loop.
 - Only the active card is in the tab order; others are `aria-hidden`.
   `aria-roledescription` "carousel" / "slide".
 - Cover: uploaded cover → YouTube `hqdefault` → typographic platform name. The
