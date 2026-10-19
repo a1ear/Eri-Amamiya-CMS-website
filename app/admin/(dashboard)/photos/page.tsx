@@ -1,9 +1,9 @@
 "use client";
 
-import { isRateLimitError } from "@convex-dev/rate-limiter";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { useId, useRef, useState, type DragEvent, type FormEvent } from "react";
+import { messageOf } from "@/components/admin/errors";
 import { SortableList, reorderLocal } from "@/components/admin/SortableList";
 import { inputClass, primaryButton, secondaryButton } from "@/components/admin/styles";
 import { api } from "@/convex/_generated/api";
@@ -90,9 +90,7 @@ function Uploader() {
     } catch (err) {
       patch(key, {
         state: "error",
-        error: isRateLimitError(err)
-          ? `Upload limit reached. Try again in ${Math.ceil(err.data.retryAfter / 60000)} min.`
-          : "Upload failed. Check your connection.",
+        error: messageOf(err, "Upload failed. Check your connection."),
       });
     }
   }
