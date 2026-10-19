@@ -19,7 +19,6 @@
   --muted: #555555; /* secondary TEXT (not shadcn's muted background) */
   --surface: #f0f0f0;
   --backdrop: #ffffff;
-  --glow: rgb(0 0 0 / 0.045);
   --card: #ffffff;
   --line: rgb(10 10 10 / 0.14);
   --line-strong: rgb(10 10 10 / 0.38);
@@ -40,7 +39,6 @@
     --muted: #a8a8ad;
     --surface: #313136;
     --backdrop: linear-gradient(180deg, #2a2a2e 0%, #1c1c1f 45%, #121214 100%);
-    --glow: rgb(255 255 255 / 0.06);
     --card: #232327;
     --line: rgb(236 236 236 / 0.14);
     --line-strong: rgb(236 236 236 / 0.38);
@@ -118,44 +116,334 @@ main {
   color: var(--foreground);
 }
 
-/* ---------------------------------------------------------------------------
-   Ambient background (public page only, see AmbientBackground.tsx).
-   Two soft glows drifting slowly. Transform-only CSS animation: runs off the
-   main thread, no JS, no layout/paint per frame. Static under reduced motion.
-   ------------------------------------------------------------------------ */
-.ambient {
+/* ===========================================================================
+   ARCADE THEME (public page only: everything below is scoped to `.arcade`,
+   so the admin keeps its clean look). Monochrome to keep the black-and-white
+   brief; the arcade feel comes from pixel type, CRT texture and motion.
+   ======================================================================== */
+
+/* Arcade screens are dark: the public page is always dark, whatever the
+   device setting (the admin still follows the device). */
+:root:has(.arcade) {
+  color-scheme: dark;
+  --background: #1c1c1f;
+  --foreground: #ececec;
+  --muted: #a8a8ad;
+  --surface: #313136;
+  --backdrop: linear-gradient(180deg, #232327 0%, #18181b 55%, #0f0f11 100%);
+  --card: #232327;
+  --line: rgb(236 236 236 / 0.14);
+  --line-strong: rgb(236 236 236 / 0.38);
+  --phosphor: 0 0 8px rgb(236 236 236 / 0.35), 0 0 22px rgb(236 236 236 / 0.12);
+}
+
+/* --- Type: VT323 for readable body text, Press Start 2P for display. ---
+   Unlayered rules so they win over Tailwind's layered size utilities. */
+.arcade {
+  font-family: var(--font-terminal), ui-monospace, monospace;
+  font-size: 1.3rem;
+  line-height: 1.35;
+}
+.arcade .text-xs {
+  font-size: 1.05rem;
+}
+.arcade .text-sm {
+  font-size: 1.2rem;
+  line-height: 1.35;
+}
+.arcade .text-base {
+  font-size: 1.3rem;
+}
+.arcade .text-lg {
+  font-size: 1.55rem;
+  line-height: 1.3;
+}
+.arcade h1,
+.arcade h2,
+.arcade h3,
+.arcade nav a,
+.arcade label,
+.arcade button,
+.arcade .font-pixel,
+.arcade .arcade-display,
+.arcade [data-slot="button"],
+.arcade [data-slot="badge"] {
+  font-family: var(--font-pixel), ui-monospace, monospace;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+.arcade h1 {
+  font-size: clamp(1.55rem, 6.4vw, 4.25rem);
+  line-height: 1.2;
+  text-shadow: var(--phosphor);
+}
+.arcade .arcade-display {
+  font-size: clamp(1.05rem, 3.4vw, 2rem);
+  line-height: 1.4;
+  text-shadow: var(--phosphor);
+}
+.arcade h2,
+.arcade h3,
+.arcade nav a,
+.arcade .font-pixel {
+  font-size: 0.62rem;
+}
+.arcade label {
+  font-size: 0.6rem;
+}
+.arcade button,
+.arcade [data-slot="button"] {
+  font-size: 0.68rem;
+}
+.arcade [data-slot="badge"] {
+  font-size: 0.55rem;
+}
+.arcade .section-label::before {
+  content: "Stage " counter(section, decimal-leading-zero) " / ";
+}
+
+/* --- Arcade button: hard drop shadow that presses in, like a cabinet button. */
+.arcade-btn {
+  box-shadow: 4px 4px 0 0 var(--line-strong);
+  transition:
+    transform 110ms var(--ease-out),
+    box-shadow 110ms var(--ease-out);
+}
+.arcade-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 0 var(--line-strong);
+}
+
+/* --- Notched "pixel" corners for frames. */
+.pixel-corners {
+  clip-path: polygon(
+    0 6px, 6px 6px, 6px 0, calc(100% - 6px) 0, calc(100% - 6px) 6px, 100% 6px,
+    100% calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) 100%,
+    6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px)
+  );
+}
+
+/* --- Blinking cursor / PRESS START: 1 Hz (far below flash thresholds) and
+   stops after 5 seconds (WCAG 2.2.2). */
+.blink {
+  animation: blink 1s steps(1, end) 5;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* --- Background: starfields (scroll parallax) + horizon + grid floor. --- */
+.arcade-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
 }
-.ambient span {
+.arcade-stars {
   position: absolute;
-  width: 70vmax;
-  height: 70vmax;
-  border-radius: 9999px;
-  background: radial-gradient(closest-side, var(--glow), transparent 70%);
+  inset: -30% 0 0 0;
   will-change: transform;
 }
-.ambient span:nth-child(1) {
-  top: -30vmax;
-  left: -20vmax;
-  animation: ambient-a 38s var(--ease-in-out) infinite alternate;
+.arcade-stars-far {
+  opacity: 0.45;
+  background:
+    radial-gradient(circle, #fff 0 1px, transparent 1.4px) 0 0 / 97px 89px,
+    radial-gradient(circle, #fff 0 1px, transparent 1.4px) 41px 63px / 151px 137px,
+    radial-gradient(circle, #fff 0 1px, transparent 1.4px) 73px 21px / 211px 193px;
 }
-.ambient span:nth-child(2) {
-  bottom: -35vmax;
-  right: -25vmax;
-  animation: ambient-b 46s var(--ease-in-out) infinite alternate;
+.arcade-stars-near {
+  opacity: 0.7;
+  background:
+    radial-gradient(circle, #fff 0 1.4px, transparent 1.8px) 23px 37px / 233px 219px,
+    radial-gradient(circle, #fff 0 1.4px, transparent 1.8px) 131px 157px / 307px 281px;
+  animation: twinkle 4s steps(2, end) infinite alternate;
 }
-@keyframes ambient-a {
+@keyframes twinkle {
   to {
-    transform: translate3d(18vmax, 14vmax, 0) scale(1.15);
+    opacity: 0.4;
   }
 }
-@keyframes ambient-b {
+.arcade-horizon {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 32vh;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(236 236 236 / 0.45), transparent);
+  box-shadow: 0 0 18px 2px rgb(236 236 236 / 0.12);
+}
+.arcade-floor {
+  position: absolute;
+  left: -50%;
+  right: -50%;
+  bottom: 0;
+  height: 32vh;
+  overflow: hidden;
+  perspective: 260px;
+  perspective-origin: 50% 0%;
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 45%);
+}
+.arcade-plane {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 300%;
+  transform-origin: 50% 0%;
+  transform: rotateX(64deg) translateY(0);
+  background-image:
+    linear-gradient(rgb(236 236 236 / 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(236 236 236 / 0.16) 1px, transparent 1px);
+  background-size: 52px 52px;
+  animation: grid-run 2.6s linear infinite;
+  will-change: transform;
+}
+@keyframes grid-run {
   to {
-    transform: translate3d(-16vmax, -12vmax, 0) scale(0.9);
+    transform: rotateX(64deg) translateY(52px);
+  }
+}
+/* Scroll-linked parallax on the background layers, where supported. */
+@supports (animation-timeline: scroll()) {
+  .arcade-stars-far {
+    animation: parallax-far linear both;
+    animation-timeline: scroll(root block);
+  }
+  .arcade-stars-near {
+    animation:
+      parallax-near linear both,
+      twinkle 4s steps(2, end) infinite alternate;
+    animation-timeline: scroll(root block), auto;
+  }
+  @keyframes parallax-far {
+    to {
+      transform: translateY(-6%);
+    }
+  }
+  @keyframes parallax-near {
+    to {
+      transform: translateY(-16%);
+    }
+  }
+}
+
+/* --- CRT: faint static scanlines + vignette over everything (no flicker). */
+.arcade-crt {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.16) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 62%, rgb(0 0 0 / 0.32) 100%);
+}
+
+/* --- XP bar under the header: fills with page scroll (no JS). */
+.arcade-xp {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 4px;
+  display: none;
+}
+.arcade-xp span {
+  display: block;
+  height: 100%;
+  background: repeating-linear-gradient(90deg, var(--foreground) 0 10px, transparent 10px 13px);
+  clip-path: inset(0 100% 0 0);
+}
+@supports (animation-timeline: scroll()) {
+  .arcade-xp {
+    display: block;
+  }
+  .arcade-xp span {
+    animation: xp-fill linear both;
+    animation-timeline: scroll(root block);
+  }
+  @keyframes xp-fill {
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+}
+
+/* --- Video showcase (GSAP-showcase style carousel). Card width comes from
+   the carousel's own width (container units), so the centring math in
+   VideoShowcase.tsx needs no measuring. Moving on screen: --ease-in-out. */
+.showcase {
+  container-type: inline-size;
+  --w: min(78cqw, 56rem);
+  --g: clamp(0.75rem, 2.5cqw, 2rem);
+}
+.showcase-track.is-animating {
+  transition: transform 650ms var(--ease-in-out);
+}
+.showcase-slide {
+  transition:
+    transform 650ms var(--ease-in-out),
+    opacity 650ms var(--ease-in-out);
+}
+.showcase-slide[data-active="false"] {
+  transform: scale(0.86);
+  opacity: 0.45;
+  cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) {
+  .showcase-slide[data-active="false"]:hover {
+    opacity: 0.7;
+  }
+}
+/* The player fades in over the cover only once it has loaded. */
+.showcase-preview {
+  opacity: 0;
+  transition: opacity 400ms var(--ease-out);
+}
+.showcase-preview.is-loaded {
+  opacity: 1;
+}
+.showcase-nav {
+  display: inline-flex;
+  width: 3rem;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--foreground);
+  background: var(--background);
+  font-size: 1rem;
+}
+.showcase-nav:disabled {
+  opacity: 0.35;
+  box-shadow: none;
+  transform: none;
+}
+.showcase-nav:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .showcase-track.is-animating,
+  .showcase-slide {
+    transition-duration: 0ms;
+  }
+}
+
+/* --- FX off (visitor switch) or reduced motion: decorative motion stops.
+   The XP bar stays: it reports position, it isn't decoration. */
+[data-fx="off"] .arcade-stars,
+[data-fx="off"] .arcade-plane,
+[data-fx="off"] .blink,
+[data-fx="off"] .arcade .animate-ping {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .arcade-stars,
+  .arcade-plane,
+  .blink {
+    animation: none !important;
   }
 }
 
@@ -209,9 +497,6 @@ main {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
-  }
-  .ambient span {
-    animation: none;
   }
   .enter {
     animation-name: enter-fade;

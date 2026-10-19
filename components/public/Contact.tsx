@@ -11,7 +11,7 @@ export function Contact() {
           </h2>
         </div>
         <div className="max-w-2xl">
-          <p className="text-[clamp(1.75rem,5vw,3rem)] font-semibold leading-tight tracking-[-0.03em]">
+          <p className="arcade-display">
             Let&apos;s work together.
           </p>
           <p className="mt-3 mb-8 text-lg text-[var(--muted)]">

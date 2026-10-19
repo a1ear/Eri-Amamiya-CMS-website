@@ -66,8 +66,39 @@ export function youtubeIdFrom(url: URL): string | null {
   return id && YT_ID.test(id) ? id : null;
 }
 
+/** A link the site can play as a silent autoplay preview. */
+export type VideoEmbed = { provider: "youtube" | "tiktok" | "twitch"; id: string };
+
+const TIKTOK_ID = /^\d{8,25}$/;
+const TWITCH_SLUG = /^[A-Za-z0-9_-]{3,120}$/;
+
+/**
+ * The embeddable id for platforms whose players allow muted autoplay.
+ * Instagram, Facebook and X don't, and TikTok's short vm./vt. links hide
+ * the id behind a redirect, so those return null (the card shows a cover).
+ */
+export function videoEmbedFrom(url: URL): VideoEmbed | null {
+  const host = url.hostname;
+  const parts = url.pathname.split("/").filter(Boolean);
+  const youtube = hostMatches(host, "youtube.com") || hostMatches(host, "youtu.be") ? youtubeIdFrom(url) : null;
+  if (youtube) return { provider: "youtube", id: youtube };
+
+  if (hostMatches(host, "tiktok.com") && !/^(vm|vt)\./.test(host)) {
+    // /@user/video/{id}, /embed/v2/{id}, /player/v1/{id}
+    const id = parts[1] === "video" ? parts[2] : parts[0] === "embed" || parts[0] === "player" ? parts[2] : undefined;
+    if (id && TIKTOK_ID.test(id)) return { provider: "tiktok", id };
+  }
+
+  if (hostMatches(host, "twitch.tv")) {
+    // clips.twitch.tv/{slug} or twitch.tv/{channel}/clip/{slug}
+    const slug = host.startsWith("clips.") ? parts[0] : parts[1] === "clip" ? parts[2] : undefined;
+    if (slug && slug !== "embed" && TWITCH_SLUG.test(slug)) return { provider: "twitch", id: slug };
+  }
+  return null;
+}
+
 export type ParsedVideo =
-  | { ok: true; url: string; platform: string; youtubeId?: string }
+  | { ok: true; url: string; platform: string; youtubeId?: string; embed: VideoEmbed | null }
   | { ok: false; error: string };
 
 export function parseVideoUrl(raw: string): ParsedVideo {
@@ -77,7 +108,19 @@ export function parseVideoUrl(raw: string): ParsedVideo {
   const youtubeId = platform === "youtube" ? youtubeIdFrom(url) : null;
   if (platform === "youtube" && !youtubeId && !hostMatches(url.hostname, "youtube.com"))
     return { ok: false, error: "That YouTube link doesn't point to a video." };
-  return { ok: true, url: url.href, platform, ...(youtubeId ? { youtubeId } : {}) };
+  return { ok: true, url: url.href, platform, ...(youtubeId ? { youtubeId } : {}), embed: videoEmbedFrom(url) };
+}
+
+/** Player URL for a muted, looping, control-free preview. */
+export function embedPreviewSrc(embed: VideoEmbed, parentHost: string): string {
+  switch (embed.provider) {
+    case "youtube":
+      return `https://www.youtube-nocookie.com/embed/${embed.id}?autoplay=1&mute=1&loop=1&playlist=${embed.id}&controls=0&playsinline=1&rel=0&disablekb=1&iv_load_policy=3&modestbranding=1`;
+    case "tiktok":
+      return `https://www.tiktok.com/player/v1/${embed.id}?autoplay=1&loop=1&controls=0&progress_bar=0&play_button=0&volume_control=0&fullscreen_button=0&timestamp=0&music_info=0&description=0&rel=0&native_context_menu=0&closed_caption=0`;
+    case "twitch":
+      return `https://clips.twitch.tv/embed?clip=${encodeURIComponent(embed.id)}&parent=${encodeURIComponent(parentHost)}&autoplay=true&muted=true&controls=false`;
+  }
 }
 
 /* ----------------------------------------------------------------- socials */

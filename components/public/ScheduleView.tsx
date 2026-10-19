@@ -58,7 +58,7 @@ export function ScheduleView({ schedule, nowMs: initialNow, creator, watchUrl }:
   if (schedule.slots.length === 0 && streams.length === 0) {
     return (
       <div>
-        <p className="text-2xl font-semibold tracking-tight">Schedule coming soon.</p>
+        <p className="arcade-display">Schedule coming soon.</p>
         {watchUrl && (
           <p className="mt-3 text-[var(--muted)]">
             Follow{" "}
@@ -82,7 +82,7 @@ export function ScheduleView({ schedule, nowMs: initialNow, creator, watchUrl }:
   return (
     <div>
       {next && (
-        <div className="relative overflow-hidden border border-[var(--line-strong)] bg-[var(--card)]/60 p-6 backdrop-blur-sm md:p-8">
+        <div className="pixel-corners relative overflow-hidden border border-[var(--line-strong)] bg-[var(--card)]/70 p-6 backdrop-blur-sm md:p-8">
           <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.25em]">
             {isLive ? (
               <Badge className="gap-2 px-2.5 uppercase tracking-[0.2em]">
@@ -97,13 +97,13 @@ export function ScheduleView({ schedule, nowMs: initialNow, creator, watchUrl }:
               <span className="text-[var(--muted)]">Next stream · {relative(next.startMs, nowMs)}</span>
             )}
           </p>
-          <p className="mt-4 text-[clamp(1.75rem,5vw,3rem)] font-semibold leading-tight tracking-[-0.03em]">
+          <p className="arcade-display mt-4">
             {isLive ? next.title : `${fmtDay.format(next.startMs)}, ${fmtTime.format(next.startMs)}`}
           </p>
           {!isLive && <p className="mt-1 text-lg">{next.title}</p>}
           {next.note && <p className="mt-2 text-[var(--muted)]">{next.note}</p>}
           {watchUrl && (
-            <Button asChild size="lg" className="press mt-6 h-12 px-6 text-sm font-semibold uppercase tracking-[0.15em]">
+            <Button asChild size="lg" className="arcade-btn mt-6 h-12 px-5 uppercase">
               <a href={watchUrl} target="_blank" rel="noopener noreferrer">
                 {isLive ? "Watch now" : "Follow to get notified"}
                 <span className="sr-only"> (opens in new tab)</span>

@@ -23,7 +23,8 @@ const csp = [
   `img-src 'self' data: blob: ${convexUrl.origin} https://i.ytimg.com`,
   "font-src 'self'",
   `connect-src 'self' ${convexUrl.origin} ${convexWs} ${TURNSTILE} ${SENTRY_INGEST} ${isDev ? "ws: wss:" : ""}`,
-  `frame-src ${TURNSTILE}`,
+  // Silent video previews (VideoShowcase): the platforms' own players.
+  `frame-src ${TURNSTILE} https://www.youtube-nocookie.com https://www.tiktok.com https://clips.twitch.tv`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

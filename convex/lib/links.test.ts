@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { normalizeHttpsUrl, parseSocialUrl, parseVideoUrl } from "./links";
+import { embedPreviewSrc, normalizeHttpsUrl, parseSocialUrl, parseVideoUrl } from "./links";
 
 describe("normalizeHttpsUrl", () => {
   test.each([
@@ -57,6 +57,39 @@ describe("parseVideoUrl", () => {
 
   test("rejects script URLs", () => {
     expect(parseVideoUrl("javascript:alert(1)").ok).toBe(false);
+  });
+});
+
+describe("video embeds (autoplay previews)", () => {
+  test.each([
+    ["https://youtu.be/dQw4w9WgXcQ", { provider: "youtube", id: "dQw4w9WgXcQ" }],
+    ["https://www.youtube.com/shorts/dQw4w9WgXcQ", { provider: "youtube", id: "dQw4w9WgXcQ" }],
+    ["https://www.tiktok.com/@eri/video/7234567890123456789?lang=en", { provider: "tiktok", id: "7234567890123456789" }],
+    ["https://www.tiktok.com/embed/v2/7234567890123456789", { provider: "tiktok", id: "7234567890123456789" }],
+    ["https://clips.twitch.tv/SomeClip-Slug_1", { provider: "twitch", id: "SomeClip-Slug_1" }],
+    ["https://www.twitch.tv/eri/clip/SomeClipSlug", { provider: "twitch", id: "SomeClipSlug" }],
+  ])("%s plays a preview", (input, embed) => {
+    expect(parseVideoUrl(input)).toMatchObject({ ok: true, embed });
+  });
+
+  test.each([
+    "https://vm.tiktok.com/ZMabc123/", // short link hides the id
+    "https://www.tiktok.com/@eri", // profile, not a video
+    "https://www.tiktok.com/@eri/video/notanid",
+    "https://www.twitch.tv/eri", // live channel, not a clip
+    "https://www.youtube.com/@eri",
+    "https://www.instagram.com/reel/Cabc123/",
+    "https://x.com/eri/status/123",
+    "https://evil.example/@eri/video/7234567890123456789",
+  ])("%s shows a cover only", (input) => {
+    expect(parseVideoUrl(input)).toMatchObject({ ok: true, embed: null });
+  });
+
+  test("player URLs are muted and encode the twitch parent", () => {
+    const yt = embedPreviewSrc({ provider: "youtube", id: "dQw4w9WgXcQ" }, "x");
+    expect(yt.startsWith("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?")).toBe(true);
+    expect(yt).toContain("mute=1");
+    expect(embedPreviewSrc({ provider: "twitch", id: "abc" }, "eri.vercel.app")).toContain("parent=eri.vercel.app&autoplay=true&muted=true");
   });
 });
 

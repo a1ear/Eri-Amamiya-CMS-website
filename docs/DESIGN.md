@@ -15,7 +15,7 @@ and this document disagree, fix one of them. Product scope lives in
 | **Content is data.** No copy, name or image is hard-coded in a component. | Every section reads a Convex query (`profile.getPublic`, `photos.listPublic`, …). The owner changes the site from the dashboard, never from code. |
 | **Empty means hidden, not broken.** A section with no data does not render, and the nav does not link to it. | Components return `null` on empty data; `SiteNavLinks` builds its links from the same queries. Exceptions: **Schedule** ("coming soon") and **Contact** (always useful). |
 | **Black and white; the photos are the colour.** No accent colour exists. | Four tokens only (§3.1). Cosplay photography carries all the colour on the page. |
-| **Nothing third-party until the visitor chooses.** | Videos are link-out cards (no embedded players), Turnstile loads lazily, Sentry loads only if configured, the Convex client loads only when the contact form is sent. |
+| **Nothing third-party until the visitor chooses** (one exception). | The only player the page loads by itself is the silent preview on the *active* video card, and only once it is on screen with FX on (see Featured videos). Turnstile loads lazily, Sentry loads only if configured, the Convex client loads only when the contact form is sent. |
 | **The UI is a courtesy; the server is the permission.** | Hiding a button never secures anything. Every admin action re-checks the session in Convex (`adminQuery` / `adminMutation` / `adminAction`), so the UI's job is clear messages, not enforcement (§7). |
 | **Plain beats clever.** It has to be faster than asking someone to edit the site. | One page, one dashboard, one action per button, inline save status. No modals in the admin except the native confirm before deleting. |
 
@@ -104,8 +104,23 @@ Rules:
 
 ### 3.2 Typography
 
-One family: **Geist** (`next/font`, self-hosted, no layout shift), fallback
-`system-ui`. No monospace or serif.
+**Admin:** Geist (`next/font`, self-hosted), fallback `system-ui`.
+
+**Public page: monochrome arcade.** Two pixel faces, self-hosted by `next/font`
+and scoped to the `.arcade` wrapper in `app/page.tsx` (the admin never loads them):
+
+| Face | Variable | Used for |
+|---|---|---|
+| Press Start 2P | `--font-pixel` | `h1–h3`, nav links, labels, buttons, badges, `.font-pixel`, `.arcade-display` |
+| VT323 | `--font-terminal` | All body text (1.3rem base; Tailwind `text-xs…lg` re-mapped up because VT323 runs small) |
+
+Press Start 2P is wide and hard to read in long runs, so it never sets
+paragraphs. Display sizes: `h1` `clamp(1.55rem,6.4vw,4.25rem)`,
+`.arcade-display` `clamp(1.05rem,3.4vw,2rem)` (next stream, contact lead,
+footer name, active video title), both with a faint phosphor glow; labels
+0.6–0.68rem. Section labels are prefixed "Stage 01 / …" by a CSS counter.
+
+The table below is the admin scale (and the public layout's original roles).
 
 | Role | Classes | Where |
 |---|---|---|
@@ -158,14 +173,24 @@ animation. Curve tokens in `globals.css`: `--ease-out` `cubic-bezier(0.23,1,0.32
 
 | Motion | Where | Tool | Spec | Reduced motion |
 |---|---|---|---|---|
-| Ambient glow (2 soft radial glows drifting) | Public only | CSS keyframes (`.ambient`) | transform only, 38s / 46s `--ease-in-out` alternate, off the main thread | static |
+| Arcade background (two star layers, horizon glow, perspective grid floor running toward the viewer) | Public only | CSS keyframes (`ArcadeBackground`) | grid `translateY` 2.6s linear loop; near stars twinkle in 2 steps; off the main thread | static |
+| Star parallax | Public | CSS scroll-driven (`animation-timeline: scroll(root)`) | far layer -6%, near -16% over the page | static |
+| XP bar (header, fills as you scroll) | Public | CSS scroll-driven, segmented clip-path | linear with scroll; hidden where unsupported | kept (reports position) |
+| CRT overlay | Public | static CSS (scanlines + vignette) | no motion | same |
+| Section label typewriter ("Stage 03 / Gallery") | Public | GSAP | clip-path `steps(n)`, one step per character, ≤ 0.9s, once | fade |
+| Gallery tile reveal | Public | GSAP batch | blocky clip-path wipe `steps(6)`, 0.5s, 70ms stagger, once | fade |
+| Hero portrait parallax + ticker strip | Public | GSAP ScrollTrigger scrub | portrait `y` -60px, ticker `xPercent` -30 across its pass | off |
+| Video showcase slide | Public | CSS transition | track `translateX` 650ms `--ease-in-out`; side cards `scale(0.86)`, opacity 0.45 | instant |
+| Video preview fade-in | Public | CSS | player opacity 0 → 1, 400ms `--ease-out`, only after it has loaded | no preview |
+| PRESS START blink | Public | CSS `steps(1)` | 1 Hz, 5 blinks then stops | static |
+| Arcade button press | Public | CSS (`.arcade-btn`) | 4px hard shadow; `:active` moves 4px into it, 110ms | same |
 | Hero entrance (words rise from masks, then tagline/bio/CTA; portrait clip-path wipe) | Public | CSS (`.enter`, `.enter-reveal`) | 700ms `--ease-out`, 60ms stagger; portrait 900ms `--ease-in-out` | fade only, 300ms |
-| Scroll reveals (section blocks; gallery/video tiles batched) | Public | **GSAP + ScrollTrigger**, lazy chunk loaded after hydration | from `y: 28` + opacity, 0.8s (tiles 0.7s, 60ms stagger), `ui-out` = `--ease-out` via CustomEase, fires once | fade only, 0.35s |
+| Scroll reveals (section blocks) | Public | **GSAP + ScrollTrigger**, lazy chunk loaded after hydration | from `y: 28` + opacity, 0.8s (tiles 0.7s, 60ms stagger), `ui-out` = `--ease-out` via CustomEase, fires once | fade only, 0.35s |
 | Lightbox open/close | Public | **Motion** (chunk loads on first gallery interaction) | dialog fade + stage `scale(0.96)` to 1, 250ms ease-out; close plays it in reverse | fade only |
 | Lightbox photo change | Public | Motion `AnimatePresence` | slide 12% toward the direction of travel, 300ms ease-out | fade only |
 | Lightbox drag (swipe left/right, flick down to close) | Public | Motion drag | spring `{duration 0.5, bounce 0.2}` snap-back; swipe at 80px, or a flick of at least 24px faster than 500px/s | same (gesture) |
 | Image hover zoom + "View" wash | Public | CSS | `scale(1.03)` 700ms `--ease-out`; hover-capable pointers only | none |
-| Live dot | Public | CSS `animate-ping` | the only looping motion besides the ambient glow | static dot |
+| Live dot | Public | CSS `animate-ping` | loops while live | static dot |
 | Button press | Both | CSS (`.press`) | `scale(0.97)` 160ms `--ease-out` on `:active` | none |
 | Confirm dialog | Admin | shadcn AlertDialog (tw-animate) | fade + `zoom-in-95`, 200ms `--ease-out` | (Radix) |
 | Inbox: a filed message leaves the list | Admin | Motion `AnimatePresence` + layout | exit `translateX(-16px)` + fade, 200ms; the rest close the gap | fade only, no layout motion |
@@ -178,6 +203,12 @@ Rules that keep it honest:
   touches sections still **below** the viewport, so nothing visible ever blinks
   out. Verified: every revealed element ends at full opacity with no leftover
   transform.
+- **FX switch (header, "FX ON/OFF").** WCAG 2.2.2 needs a way to stop motion
+  that runs longer than 5 seconds even for visitors who never set "reduce
+  motion". It sets `data-fx="off"` on `<html>` (remembered per device in
+  localStorage), which stops the stars, grid, blink and ping in CSS; GSAP
+  reverts the parallax and ticker on the `fx-change` event; the video
+  preview unmounts. One-shot reveals still run (each is under a second).
 - **No ambient motion in the admin.** It is a tool used many times a day; it
   gets only fast feedback (press, dialog, list exit).
 - Sortable admin rows have **no** entrance animation: dnd-kit drives their
@@ -228,11 +259,31 @@ carry meaning are paired with `sr-only` text or an `aria-label`.
   locked, **focus returns to the tile of the last photo viewed**. No
   click-to-close on the photo itself (a drag's mouse-up would trigger it).
 
-### Featured videos
-- Cards in a 1 → 2 (`sm`) → 3 (`lg`) grid; 16:9 frame with a 1px border.
-- Thumbnail: uploaded cover → YouTube `hqdefault` → typographic platform name.
-- `▶` badge bottom-left, title, then "Watch on {Platform} ↗". The whole card
-  is one link (new tab).
+### Featured videos (showreel carousel, after GSAP's showcase)
+- `VideoShowcase.tsx`: full-bleed. The active card is centred at
+  `min(78cqw, 56rem)` wide (container units, so no measuring), neighbours peek
+  in at the edges at `scale(0.86)` and 45% opacity. Below: the active title
+  (`.arcade-display`, `aria-live`), `{ Watch on {Platform} ↗ }`, then square
+  ← → buttons around a `02 / 05` counter (disabled at the ends, no wrap).
+- Input: buttons, ←/→ keys anywhere in the carousel, drag/swipe (6px to start,
+  12% of the width or a flick to change; rubber-band at the ends; the click
+  after a drag is swallowed), or tap a peeking card to bring it to centre.
+- Only the active card is in the tab order; others are `aria-hidden`.
+  `aria-roledescription` "carousel" / "slide".
+- Cover: uploaded cover → YouTube `hqdefault` → typographic platform name. The
+  active card is one link to the video on its platform (new tab).
+- **Silent preview.** No uploads: the player is built from the link
+  (`videoEmbedFrom` / `embedPreviewSrc` in `convex/lib/links.ts`, derived on
+  read so old videos need no migration). Supported: YouTube (via
+  youtube-nocookie, muted, looped, no controls), full TikTok video links
+  (`/@user/video/{id}`; short `vm.`/`vt.` links hide the id), Twitch clips.
+  Instagram, Facebook and X don't allow muted autoplay embeds, so they stay
+  cover-only. The iframe mounts **only** for the active card, after it has
+  settled for 700ms, while ≥50% of the carousel is on screen, with FX on, no
+  reduced motion and no Save-Data. It is sandboxed, `pointer-events-none`,
+  hidden from assistive tech, and fades in over the cover once loaded.
+- The admin Videos page labels each video "Plays preview" or "Cover only" and
+  says so live while a link is pasted.
 
 ### Schedule
 - **Next stream card:** "Next stream · in 17 hours" + day/time headline + title
@@ -431,17 +482,18 @@ Measured on the production build:
 
 | Metric | Budget | Measured |
 |---|---|---|
-| First-party JS in the critical path (compressed) | ≤ 200 KB | ~178 KB |
+| First-party JS in the critical path (compressed) | ≤ 200 KB | ~181 KB (excludes the 39 KB `noModule` polyfills modern browsers skip) |
 | GSAP chunk | after load, never blocking | 47 KB, starts ~3s in (after `load`) |
 | Motion (lightbox) | only when a photo is opened | 2 small chunks on first interaction |
 | HTML | ≤ 30 KB | 16 KB |
 | CLS | 0 | 0 |
-| Third-party requests before interaction | Turnstile only (lazy) | Turnstile only |
+| Third-party requests before interaction | Turnstile (lazy) + the active video's preview player when scrolled into view | as budgeted |
 
-Rules that keep it there: no embedded players; anything heavy loads on intent
+Rules that keep it there: at most one embedded player, ever, and only in view; anything heavy loads on intent
 (`import()` on gallery interaction, after hydration, on submit, or only when
-configured); images through `next/image` with explicit `sizes`; ambient and
-hero motion in CSS (zero JS); no web fonts beyond Geist.
+configured); images through `next/image` with explicit `sizes`; background and
+hero motion in CSS (zero JS); web fonts are Geist (admin) and the two
+pixel faces (public), all self-hosted by `next/font`.
 
 ---
 

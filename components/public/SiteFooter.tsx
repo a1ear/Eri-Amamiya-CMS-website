@@ -9,7 +9,8 @@ export async function SiteFooter() {
     <footer className="border-t border-[var(--line)]">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-12 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-[clamp(1.75rem,5vw,3rem)] font-semibold leading-none tracking-[-0.03em]">{name}</p>
+          <p className="arcade-display">{name}</p>
+          <p className="mt-3 font-pixel uppercase text-[var(--muted)]">Thanks for playing</p>
           {socials.length > 0 && (
             <nav aria-label="Social media" className="mt-6">
               <SocialLinkList

@@ -124,7 +124,7 @@ export function ContactForm() {
   if (status.kind === "sent") {
     return (
       <div role="status" className="item-enter border border-[var(--line-strong)] bg-[var(--card)] p-6 md:p-8">
-        <p className="text-2xl font-semibold tracking-tight">Message sent. Thank you!</p>
+        <p className="arcade-display">Message sent!</p>
         <p className="mt-2 text-[var(--muted)]">You&apos;ll get a reply at the email you entered.</p>
         <button
           type="button"
@@ -194,9 +194,9 @@ export function ContactForm() {
             type="submit"
             size="lg"
             disabled={status.kind === "sending"}
-            className="press h-12 px-8 text-sm font-semibold uppercase tracking-[0.15em]"
+            className="arcade-btn h-12 px-6 uppercase"
           >
-            {status.kind === "sending" ? "Sending…" : "Send message"}
+            {status.kind === "sending" ? "Sending…" : "Send message ▶"}
           </Button>
           <p role={status.kind === "error" ? "alert" : "status"} className="text-sm font-medium">
             {status.kind === "error" && status.message}

@@ -3,7 +3,7 @@ import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, query, type QueryCtx } from "./_generated/server";
 import { VIDEO_RULES } from "./lib/linkRules";
-import { parseVideoUrl, VIDEO_PLATFORMS } from "./lib/links";
+import { normalizeHttpsUrl, parseVideoUrl, VIDEO_PLATFORMS, videoEmbedFrom } from "./lib/links";
 import { moveAfter, orderForFirst } from "./lib/ordering";
 import { cleanText } from "./lib/profileRules";
 import { adminAction, adminMutation, adminQuery } from "./lib/requireAdmin";
@@ -30,6 +30,12 @@ async function thumbnailUrl(ctx: QueryCtx, video: Doc<"videos">) {
   return null;
 }
 
+/** Derived from the stored link on read, so older videos need no backfill. */
+function embedFor(url: string) {
+  const parsed = normalizeHttpsUrl(url);
+  return parsed ? videoEmbedFrom(parsed) : null;
+}
+
 function platformLabel(platform: string, url: string) {
   return VIDEO_PLATFORMS[platform]?.label ?? new URL(url).hostname.replace(/^www\./, "");
 }
@@ -49,6 +55,7 @@ export const listPublic = query({
         platform: v.platform,
         platformLabel: platformLabel(v.platform, v.url),
         thumbnailUrl: await thumbnailUrl(ctx, v),
+        embed: embedFor(v.url),
       })),
     );
   },
@@ -63,6 +70,7 @@ export const listAdmin = adminQuery({
         ...v,
         platformLabel: platformLabel(v.platform, v.url),
         thumbnailUrl: await thumbnailUrl(ctx, v),
+        embed: embedFor(v.url),
       })),
     );
   },

@@ -44,7 +44,8 @@ describe("videos", () => {
     expect(pub[0].url).toBe("https://youtu.be/dQw4w9WgXcQ");
     expect(pub[1].thumbnailUrl).toBeNull();
     expect(pub[1].platformLabel).toBe("TikTok");
-    expect(Object.keys(pub[0]).sort()).toEqual(["id", "platform", "platformLabel", "thumbnailUrl", "title", "url"]);
+    expect(pub[0].embed).toEqual({ provider: "youtube", id: "dQw4w9WgXcQ" });
+    expect(Object.keys(pub[0]).sort()).toEqual(["embed", "id", "platform", "platformLabel", "thumbnailUrl", "title", "url"]);
   });
 
   test("rejects script URLs and empty titles together", async () => {

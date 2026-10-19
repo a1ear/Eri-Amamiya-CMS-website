@@ -2,6 +2,7 @@
 
 import { useAction, useMutation, useQuery } from "convex/react";
 import { useId, useRef, useState, type FormEvent } from "react";
+import { Badge } from "@/components/ui/badge";
 import { useConfirm } from "@/components/admin/ConfirmProvider";
 import { fieldErrorsOf, messageOf } from "@/components/admin/errors";
 import { SortableList, reorderLocal } from "@/components/admin/SortableList";
@@ -25,6 +26,10 @@ export default function VideosPage() {
       <h1 className="text-2xl font-semibold tracking-tight">Featured videos</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Paste a link to any video (TikTok, YouTube, Instagram, Facebook, Twitch…). Visitors tap the card to watch it there.
+      </p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        YouTube videos, full TikTok video links and Twitch clips also play a silent preview on your site. For TikTok, use
+        the full link (tiktok.com/@you/video/…), not a short vm.tiktok.com one. Other links show their cover image.
       </p>
 
       <AddVideoForm />
@@ -99,7 +104,7 @@ function AddVideoForm() {
           {errors.url ? (
             <span className="font-semibold text-current">{errors.url}</span>
           ) : preview?.ok ? (
-            `Detected: ${VIDEO_PLATFORMS[preview.platform]?.label ?? "Other website"}${preview.youtubeId ? " (thumbnail added automatically)" : ""}`
+            `Detected: ${VIDEO_PLATFORMS[preview.platform]?.label ?? "Other website"}${preview.embed ? ". Plays a silent preview on your site" : ". Shows a cover only"}${preview.youtubeId ? ", thumbnail added automatically." : "."}`
           ) : preview ? (
             preview.error
           ) : (
@@ -214,6 +219,7 @@ function VideoRow({ video }: { video: Video }) {
             className={`${inputClass} py-1.5 text-sm`}
           />
         </div>
+        <Badge variant={video.embed ? "default" : "outline"}>{video.embed ? "Plays preview" : "Cover only"}</Badge>
         <a
           href={video.url}
           target="_blank"
