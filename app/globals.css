@@ -1,20 +1,29 @@
 @import "tailwindcss";
 
 /* Black-and-white theme. Greys are only used for secondary text and
-   placeholders, and --muted keeps AA contrast on both backgrounds. */
+   placeholders, and --muted keeps AA contrast on every background.
+   --background is the solid tone for filled UI (header, inverted text);
+   --backdrop paints the page itself. */
 :root {
+  /* Native controls (dropdowns, date/time pickers, scrollbars) follow the theme. */
+  color-scheme: light dark;
   --background: #ffffff;
   --foreground: #0a0a0a;
   --muted: #555555;
   --surface: #f0f0f0;
+  --backdrop: #ffffff;
 }
 
+/* Dark: charcoal-to-black instead of pure black, and a softened white, so
+   long viewing is easier on the eyes. Contrast stays 12–16:1 for text and
+   6–8:1 for muted text across the whole gradient. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #f5f5f5;
-    --muted: #a3a3a3;
-    --surface: #1a1a1a;
+    --background: #1c1c1f;
+    --foreground: #ececec;
+    --muted: #a8a8ad;
+    --surface: #313136;
+    --backdrop: linear-gradient(180deg, #2a2a2e 0%, #1c1c1f 45%, #121214 100%);
   }
 }
 
@@ -28,6 +37,18 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Fixed to the viewport (a separate layer, so scrolling stays smooth on
+   phones): the gradient frames the screen instead of stretching over the
+   whole long page. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--backdrop);
+  pointer-events: none;
 }
 
 html {

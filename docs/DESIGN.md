@@ -74,13 +74,26 @@ What that means for design:
 
 | Token | Light | Dark | Use | Contrast on bg |
 |---|---|---|---|---|
-| `--background` | `#ffffff` | `#0a0a0a` | page background, inverted button text | n/a |
-| `--foreground` | `#0a0a0a` | `#f5f5f5` | text, rules, borders, filled buttons | 19.8:1 / 18.2:1 |
-| `--muted` | `#555555` | `#a3a3a3` | section labels, secondary text, metadata | 7.5:1 / 7.8:1 (AA at any size) |
-| `--surface` | `#f0f0f0` | `#1a1a1a` | image placeholders, skeletons | decorative only |
+| `--backdrop` | `#ffffff` | gradient `#2a2a2e` → `#1c1c1f` → `#121214` (top → bottom) | the page itself (fixed `body::before` layer) | n/a |
+| `--background` | `#ffffff` | `#1c1c1f` | solid fills: sticky header, inverted button text, dragged rows | n/a |
+| `--foreground` | `#0a0a0a` | `#ececec` | text, rules, borders, filled buttons | 19.8:1 / 12.1–15.8:1 |
+| `--muted` | `#555555` | `#a8a8ad` | section labels, secondary text, metadata | 7.5:1 / 6.0–7.9:1 (AA at any size) |
+| `--surface` | `#f0f0f0` | `#313136` | image placeholders, skeletons | decorative only |
+
+Dark-mode contrast is quoted across the whole gradient (lightest top to
+darkest bottom).
 
 Rules:
 - Theme follows the device (`prefers-color-scheme`); there is no toggle.
+  `color-scheme: light dark` makes native controls (dropdowns, date/time
+  pickers, scrollbars) follow it too.
+- **Dark mode is charcoal, not black.** Pure `#000`/`#0a0a0a` with pure
+  white text (18:1) caused eye strain; the gradient and `#ececec` text keep
+  contrast well above AA while softening glare. Don't reintroduce pure black
+  page backgrounds. (The photo lightbox stays near-black on purpose: photos
+  read best on black.)
+- The gradient is fixed to the viewport, not stretched over the page, so it
+  frames every screen the same way and scrolls without repainting.
 - Never introduce a hue. State is shown by **weight, borders, fills and text**,
   never by colour alone: an error is bold text with `role="alert"`, an
   invalid field gets a 2px border, a hidden item gets 40% thumbnail opacity
