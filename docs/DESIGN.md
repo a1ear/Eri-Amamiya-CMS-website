@@ -176,11 +176,10 @@ animation. Curve tokens in `globals.css`: `--ease-out` `cubic-bezier(0.23,1,0.32
 | Arcade background (two star layers, horizon glow, perspective grid floor running toward the viewer) | Public only | CSS keyframes (`ArcadeBackground`) | grid `translateY` 2.6s linear loop; near stars twinkle in 2 steps; off the main thread | static |
 | Star parallax | Public | CSS scroll-driven (`animation-timeline: scroll(root)`) | far layer -6%, near -16% over the page | static |
 | XP bar (header, fills as you scroll) | Public | CSS scroll-driven, segmented clip-path | linear with scroll; hidden where unsupported | kept (reports position) |
-| CRT overlay | Public | static CSS (scanlines + vignette) | no motion | same |
 | Section label typewriter ("Stage 03 / Gallery") | Public | GSAP | clip-path `steps(n)`, one step per character, ≤ 0.9s, once | fade |
-| Gallery tile reveal | Public | GSAP batch | blocky clip-path wipe `steps(6)`, 0.5s, 70ms stagger, once | fade |
+| Gallery card reveal | Public | GSAP batch (on the frame inside each slide, so the slide keeps its carousel scale/opacity) | blocky clip-path wipe `steps(6)`, 0.5s, 70ms stagger, once | fade |
 | Hero portrait parallax + ticker strip | Public | GSAP ScrollTrigger scrub | portrait `y` -60px, ticker `xPercent` -30 across its pass | off |
-| Video showcase slide | Public | CSS transition | track `translateX` 650ms `--ease-in-out`; side cards `scale(0.86)`, opacity 0.45 | instant |
+| Showcase slide (photos and videos) | Public | CSS transition | track `translateX` 650ms `--ease-in-out`; side cards `scale(0.86)`, opacity 0.45 | instant |
 | Video preview fade-in | Public | CSS | player opacity 0 → 1, 400ms `--ease-out`, only after it has loaded | no preview |
 | PRESS START blink | Public | CSS `steps(1)` | 1 Hz, 5 blinks then stops | static |
 | Arcade button press | Public | CSS (`.arcade-btn`) | 4px hard shadow; `:active` moves 4px into it, 110ms | same |
@@ -246,17 +245,22 @@ carry meaning are paired with `sr-only` text or an `aria-label`.
   `rel="noopener noreferrer nofollow ugc"`). Never interprets HTML.
 
 ### Gallery and lightbox
-- CSS columns, 2 → 3 at `lg`, natural aspect ratios (width/height stored per
-  photo, so no layout shift).
-- Tile = button → image, then tag (meta label) and caption.
+- A showcase carousel (`GalleryGrid.tsx`), the same mechanics as Featured
+  videos via the shared `useShowcase` hook (buttons, ←/→, swipe, tap a
+  neighbour to centre it). Cards are 4:5 `object-cover` at `min(64cqw, 26rem)`
+  (`.showcase-photos`), narrower than videos so more neighbours show.
+- Below the carousel: tag (pixel label) and caption (`.arcade-display`) of the
+  active photo (`aria-live`), `{ View full photo }`, and `← 01 / 10 →`.
+- Tapping the active card or "View full photo" opens the lightbox, where the
+  photo shows at its natural aspect ratio.
 - **Alt text** derived: `caption` → `"{tag} cosplay"` → `"Cosplay photo"`, plus
   `" by {name}"`.
-- Hover/focus: the image eases to 1.03 and a "View" wash fades in (hover-capable pointers only).
-- Lightbox (`Lightbox.tsx`, Motion, loaded on first interaction with the grid):
+- Hover/focus on the active card: a "View" wash fades in (hover-capable pointers only).
+- Lightbox (`Lightbox.tsx`, Motion, loaded on first interaction with the gallery):
   native `<dialog>` (focus trap, Esc, inert page), solid black stage. Counter
   `n / N` (`aria-live`), ← → buttons and arrow keys, **drag/swipe left or right**
   to change photo and **flick down** to close (spring snap-back), page scroll
-  locked, **focus returns to the tile of the last photo viewed**. No
+  locked, **the carousel moves to the last photo viewed and focus returns to it**. Rendered outside the carousel region, so its arrow keys never also move the carousel. No
   click-to-close on the photo itself (a drag's mouse-up would trigger it).
 
 ### Featured videos (showreel carousel, after GSAP's showcase)

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Press_Start_2P, VT323 } from "next/font/google";
 import { Suspense } from "react";
 import { About } from "@/components/public/About";
-import { ArcadeBackground, CrtOverlay } from "@/components/public/ArcadeBackground";
+import { ArcadeBackground } from "@/components/public/ArcadeBackground";
 import { Contact } from "@/components/public/Contact";
 import { FxToggle } from "@/components/public/FxToggle";
 import { Gallery } from "@/components/public/Gallery";
@@ -79,7 +79,6 @@ export default function Home() {
       <Suspense fallback={null}>
         <SiteFooter />
       </Suspense>
-      <CrtOverlay />
     </div>
   );
 }

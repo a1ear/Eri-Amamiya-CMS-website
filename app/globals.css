@@ -330,17 +330,6 @@ main {
   }
 }
 
-/* --- CRT: faint static scanlines + vignette over everything (no flicker). */
-.arcade-crt {
-  position: fixed;
-  inset: 0;
-  z-index: 45;
-  pointer-events: none;
-  background:
-    repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.16) 0 1px, transparent 1px 3px),
-    radial-gradient(ellipse at center, transparent 62%, rgb(0 0 0 / 0.32) 100%);
-}
-
 /* --- XP bar under the header: fills with page scroll (no JS). */
 .arcade-xp {
   position: absolute;
@@ -378,6 +367,11 @@ main {
   container-type: inline-size;
   --w: min(78cqw, 56rem);
   --g: clamp(0.75rem, 2.5cqw, 2rem);
+}
+/* Photos: narrower portrait cards, so more neighbours show. */
+.showcase-photos {
+  --w: min(64cqw, 26rem);
+  --g: clamp(0.75rem, 2cqw, 1.5rem);
 }
 .showcase-track.is-animating {
   transition: transform 650ms var(--ease-in-out);

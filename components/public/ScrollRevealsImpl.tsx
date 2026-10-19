@@ -16,7 +16,7 @@ CustomEase.create("ui-out", "M0,0 C0.23,1 0.32,1 1,1");
  * Reveals (one-shot, under a second each):
  * - Only elements still BELOW the viewport when this loads are animated, so
  *   nothing the visitor already sees ever blinks out and back in.
- * - Section labels type themselves in ("Stage 03 / Gallery"); gallery tiles
+ * - Section labels type themselves in ("Stage 03 / Gallery"); gallery cards
  *   wipe in in blocky steps, like a sprite loading; other blocks rise.
  * - Reduced motion: a short fade, no movement.
  *
@@ -33,7 +33,8 @@ export default function ScrollRevealsImpl() {
       .toArray<HTMLElement>("main section:not(:first-of-type) > div > :not(ul):not(.section-label), footer > div")
       .filter(unseen);
     const labels = gsap.utils.toArray<HTMLElement>("main .section-label").filter(unseen);
-    const tiles = gsap.utils.toArray<HTMLElement>("#gallery ul > li").filter(unseen);
+    // The frame inside each slide, so the slide keeps its own carousel scale/opacity.
+    const tiles = gsap.utils.toArray<HTMLElement>("#gallery ul > li > button").filter(unseen);
 
     const mm = gsap.matchMedia();
     mm.add(

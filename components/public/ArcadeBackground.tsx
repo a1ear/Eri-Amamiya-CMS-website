@@ -21,7 +21,3 @@ export function ArcadeBackground() {
   );
 }
 
-/** Faint CRT scanlines + vignette over the page (static, no flicker). */
-export function CrtOverlay() {
-  return <div aria-hidden className="arcade-crt" />;
-}

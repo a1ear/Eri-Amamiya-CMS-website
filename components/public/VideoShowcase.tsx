@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { embedPreviewSrc } from "@/convex/lib/links";
 import type { PublicVideo } from "@/lib/public-data";
 import { cn } from "@/lib/utils";
 import { useFxEnabled } from "./FxToggle";
+import { ShowcaseControls, useShowcase } from "./useShowcase";
 
 /*
  * Showreel carousel, after GSAP's showcase: the active video sits centred and
@@ -13,11 +14,11 @@ import { useFxEnabled } from "./FxToggle";
  * silent looping preview. The preview is a player iframe built from the link
  * (no uploads). It only mounts for the active card, once the carousel is on
  * screen and has settled, and never with FX off, reduced motion or Save-Data.
- * Clicking the card still opens the video on its own platform.
+ * Clicking the card still opens the video on its own platform. Carousel
+ * mechanics are shared with the photo gallery (useShowcase).
  */
 
 const SETTLE_MS = 700;
-const DRAG_START = 6;
 
 function subscribeMedia(onChange: () => void) {
   const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -31,32 +32,22 @@ function saveData() {
   return Boolean(nav.connection?.saveData);
 }
 
-const pad = (n: number) => String(n).padStart(2, "0");
-
 export function VideoShowcase({ videos }: { videos: PublicVideo[] }) {
-  const [active, setActive] = useState(0);
-  const [dragX, setDragX] = useState(0);
+  const { active, go, dragging, regionProps, viewportProps, trackStyle } = useShowcase(videos.length);
   const [inView, setInView] = useState(false);
   const [settledOn, setSettledOn] = useState<number | null>(null);
   const [loaded, setLoaded] = useState<string | null>(null);
   const fx = useFxEnabled();
   const reduce = useSyncExternalStore(subscribeMedia, prefersReduced, () => false);
 
-  const viewport = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ x: number; t: number; moved: boolean; id: number } | null>(null);
-  const suppressClick = useRef(false);
-
-  const last = videos.length - 1;
-  const go = (i: number) => setActive(Math.max(0, Math.min(last, i)));
-
   // Play only while at least half the carousel is on screen.
   useEffect(() => {
-    const el = viewport.current;
+    const el = viewportProps.ref.current;
     if (!el) return;
     const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0.5 });
     io.observe(el);
     return () => io.disconnect();
-  }, []);
+  }, [viewportProps.ref]);
 
   // Wait for the slide to finish moving before loading a player.
   useEffect(() => {
@@ -69,74 +60,18 @@ export function VideoShowcase({ videos }: { videos: PublicVideo[] }) {
   const previewSrc =
     canPreview && current.embed ? embedPreviewSrc(current.embed, window.location.hostname) : null;
 
-  function onPointerDown(e: PointerEvent<HTMLDivElement>) {
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    drag.current = { x: e.clientX, t: performance.now(), moved: false, id: e.pointerId };
-  }
-
-  function onPointerMove(e: PointerEvent<HTMLDivElement>) {
-    const d = drag.current;
-    if (!d || d.id !== e.pointerId) return;
-    const dx = e.clientX - d.x;
-    if (!d.moved && Math.abs(dx) < DRAG_START) return;
-    if (!d.moved) {
-      d.moved = true;
-      e.currentTarget.setPointerCapture(e.pointerId);
-    }
-    // Resist past the first and last card.
-    const edge = (active === 0 && dx > 0) || (active === last && dx < 0);
-    setDragX(edge ? dx * 0.3 : dx);
-  }
-
-  function onPointerEnd(e: PointerEvent<HTMLDivElement>) {
-    const d = drag.current;
-    drag.current = null;
-    if (!d || !d.moved) return;
-    suppressClick.current = true;
-    const dx = e.clientX - d.x;
-    const velocity = dx / Math.max(1, performance.now() - d.t);
-    const width = viewport.current?.clientWidth ?? 400;
-    if (dx < -width * 0.12 || velocity < -0.5) go(active + 1);
-    else if (dx > width * 0.12 || velocity > 0.5) go(active - 1);
-    setDragX(0);
-  }
-
   if (!current) return null;
 
-  const trackStyle = {
-    transform: `translateX(calc(50cqw - var(--w) / 2 - ${active} * (var(--w) + var(--g)) + ${dragX}px))`,
-  } as CSSProperties;
-
   return (
-    <div
-      role="region"
-      aria-roledescription="carousel"
-      aria-label="Featured videos"
-      onKeyDown={(e) => {
-        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-        e.preventDefault();
-        go(active + (e.key === "ArrowLeft" ? -1 : 1));
-      }}
-    >
+    <div {...regionProps} aria-label="Featured videos">
       <div
-        ref={viewport}
+        {...viewportProps}
         className="showcase relative w-full touch-pan-y select-none overflow-hidden py-2"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerEnd}
-        onPointerCancel={onPointerEnd}
-        onClickCapture={(e) => {
-          if (suppressClick.current) {
-            suppressClick.current = false;
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        }}
       >
         <ul
           className={cn(
             "showcase-track flex w-max gap-[var(--g)]",
-            dragX === 0 && "is-animating",
+            !dragging && "is-animating",
           )}
           style={trackStyle}
         >
@@ -232,31 +167,7 @@ export function VideoShowcase({ videos }: { videos: PublicVideo[] }) {
           {"{"} Watch on {current.platformLabel} <span aria-hidden className="ml-2">↗</span> {"}"}
           <span className="sr-only"> (opens in new tab)</span>
         </a>
-        {videos.length > 1 && (
-          <div className="flex items-center gap-5">
-            <button
-              type="button"
-              onClick={() => go(active - 1)}
-              disabled={active === 0}
-              aria-label="Previous video"
-              className="showcase-nav arcade-btn"
-            >
-              <span aria-hidden>←</span>
-            </button>
-            <span className="font-pixel text-[var(--muted)]" aria-hidden>
-              {pad(active + 1)} / {pad(videos.length)}
-            </span>
-            <button
-              type="button"
-              onClick={() => go(active + 1)}
-              disabled={active === last}
-              aria-label="Next video"
-              className="showcase-nav arcade-btn"
-            >
-              <span aria-hidden>→</span>
-            </button>
-          </div>
-        )}
+        <ShowcaseControls active={active} count={videos.length} go={go} noun="video" />
       </div>
     </div>
   );

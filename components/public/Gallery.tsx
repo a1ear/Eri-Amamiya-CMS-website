@@ -7,14 +7,13 @@ export async function Gallery() {
   if (photos.length === 0) return null;
 
   return (
-    <section id="gallery" aria-labelledby="gallery-heading" className="scroll-mt-16 border-t border-[var(--line)]">
-      <div className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 id="gallery-heading" className="section-label text-xs font-medium uppercase tracking-[0.25em] text-[var(--muted)]">
-            Cosplay gallery
-          </h2>
-          <p className="text-xs tabular-nums text-[var(--muted)]">{photos.length} photos</p>
-        </div>
+    <section id="gallery" aria-labelledby="gallery-heading" className="scroll-mt-16 border-t border-[var(--line)] py-16 md:py-24">
+      <div className="mx-auto w-full max-w-6xl px-4">
+        <h2 id="gallery-heading" className="section-label text-xs font-medium uppercase tracking-[0.25em] text-[var(--muted)]">
+          Cosplay gallery
+        </h2>
+      </div>
+      <div className="mt-10">
         <GalleryGrid photos={photos} creator={profile?.displayName ?? ""} />
       </div>
     </section>
