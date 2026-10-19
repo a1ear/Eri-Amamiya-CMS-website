@@ -10,7 +10,7 @@
     "dev:convex": "convex dev",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "seed:admin": "node scripts/seed-admin.mjs",
     "backup": "node scripts/backup.mjs",
     "reset:admin-password": "node scripts/seed-admin.mjs --reset"
