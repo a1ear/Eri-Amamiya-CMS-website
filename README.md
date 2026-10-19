@@ -54,10 +54,15 @@ Open http://localhost:3000 and http://localhost:3000/admin.
 
 ## Deploying to production
 
-1. **Convex:** `npx convex login`, then `npx convex deploy`. In the dashboard
-   (Settings → Environment Variables) for **production** set every variable
-   listed under "Convex deployment env" in [.env.example](.env.example),
-   including `RESEND_TEST_MODE=false` and `TURNSTILE_EXPECTED_HOSTNAME`.
+1. **Convex:** project `eri-amamiya-cms` (team `joshua-anton-magbanua`): dev
+   deployment `qualified-tern-417`, production `cool-deer-612`. **Set the
+   production env vars before the first deploy**: the auth module refuses to
+   load without `SITE_URL`, so a push to an unconfigured deployment fails
+   (deliberately). Use `npx convex env set --prod NAME value` or the dashboard
+   (Settings → Environment Variables) for every variable listed under "Convex
+   deployment env" in [.env.example](.env.example), including
+   `RESEND_TEST_MODE=false` and `TURNSTILE_EXPECTED_HOSTNAME`.
+   `BETTER_AUTH_SECRET` is already set on production (its own value, not dev's).
 2. **Resend:** verify the sending domain; use an address on it for `RESEND_FROM`.
 3. **Turnstile:** create a widget for the domain; site key → Vercel, secret → Convex.
 4. **Vercel:** import the repo. Build command
