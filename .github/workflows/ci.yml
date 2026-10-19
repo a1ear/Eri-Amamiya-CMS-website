@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Tests (Convex functions, auth, validation, schedule maths)
+        run: npm test
+      - name: Build
+        run: npm run build
+        env:
+          # Build does not read data (pages render at request time); these only
+          # need to be well-formed.
+          NEXT_PUBLIC_CONVEX_URL: https://ci-placeholder.convex.cloud
+          NEXT_PUBLIC_CONVEX_SITE_URL: https://ci-placeholder.convex.site
+          NEXT_PUBLIC_SITE_URL: https://example.com
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
